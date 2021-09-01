@@ -54,7 +54,7 @@ async function main() {
   // if (process.env.CONTRACT_ADDRESS !== OPENSEA_SHARED_STOREFRONT_ADDRESS) {
   //   params.append('asset_contract_address', process.env.CONTRACT_ADDRESS!)
   // }
-
+  console.log("Fetching https://api.opensea.io/api/v1/events?" + params);
   const openSeaResponse = await fetch(
     "https://api.opensea.io/api/v1/events?" + params).then((resp) => resp.json());
   console.log(openSeaResponse);
