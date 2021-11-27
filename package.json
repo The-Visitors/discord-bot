@@ -1,8 +1,7 @@
 {
   "license": "MIT",
   "scripts": {
-    // "heroku-postdeploy": "yarn ts-node checkSales.ts",
-    "start": "yarn ts-node checkSales.ts"
+    "heroku-postdeploy": "yarn ts-node checkSales.ts"
   },
   "dependencies": {
     "@types/node": "^14.14.36",

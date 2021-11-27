@@ -28,7 +28,9 @@
     }
   },
   "image": "heroku/nodejs",
-  "addons": ["scheduler"],
+  "addons": [
+    "scheduler"
+  ],
   "formation": [],
   "buildpacks": [
     {
