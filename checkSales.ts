@@ -40,6 +40,7 @@ async function main() {
   const seconds = process.env.SECONDS ? parseInt(process.env.SECONDS) : 3_600;
   const hoursAgo = (Math.round(new Date().getTime() / 1000) - (seconds)); // in the last hour, run hourly?
 
+
   const params = new URLSearchParams({
     offset: '0',
     event_type: 'successful',
@@ -52,7 +53,7 @@ async function main() {
     params.append('asset_contract_address', process.env.CONTRACT_ADDRESS!)
   }
 
-  let openSeaFetch = {}
+  let openSeaFetch = { method: 'GET' };
   if (process.env.OPENSEA_TOKEN) {
     openSeaFetch['headers'] = { 'X-API-KEY': process.env.OPENSEA_API }
   }
