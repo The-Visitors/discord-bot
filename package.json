@@ -1,7 +1,7 @@
 {
   "license": "MIT",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.ts"
   },
   "main": "index.js",
   "dependencies": {
