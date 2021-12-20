@@ -12,6 +12,9 @@ const {
 	OPENSEA_KEY,
 	COLLECTION_SLUG,
 	ENS_PROVIDER_URL,
+	AUTHOR_NAME,
+	AUTHOR_THUMBNAIL,
+	AUTHOR_URL,
 } = process.env;
 
 const ensprovider = new ethers.providers.JsonRpcProvider(ENS_PROVIDER_URL);
