@@ -28,6 +28,7 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
 	console.log('Ready!');
+	console.log(`Watching ${await contract.name()}`);
 	const channel = await client.channels.fetch(CHANNEL_ID);
 	listenForSales(channel);
 });
@@ -64,6 +65,7 @@ const buildMessage = async (sale) => (
 async function searchForToken(token, channel, count) {
 	console.log(`Searching for token ${token} attempt ${count}`);
 	count = count || 0;
+	let found = false;
 	const params = new URLSearchParams({
 		collection_slug: COLLECTION_SLUG,
 		event_type: 'successful',
@@ -75,20 +77,18 @@ async function searchForToken(token, channel, count) {
 	console.log('With params:', params);
 
 	const fetchOptions = {
-		headers: { 'X-API-KEY': OPENSEA_KEY },
+		headers: { 'x-api-key': OPENSEA_KEY },
 	};
 	const openSeaResponseObject = await axios.get('https://api.opensea.io/api/v1/events?' + params, fetchOptions)
 		.catch((e) => {
 			console.log('ERRRRR');
 			console.log(e);
 		});
-	console.log('OS Response is', openSeaResponseObject);
 	const openSeaResponse = openSeaResponseObject.data;
 	if (!openSeaResponse.asset_events) {
 		console.log('no asset_events');
 	}
-	if (openSeaResponse.asset_events && openSeaResponse.asset_events.length) {
-		let found = false;
+	if (openSeaResponse.asset_events) {
 		openSeaResponse.asset_events.forEach((event) => {
 			console.log(`Comparing ${token} to ${event.asset.token_id}`);
 			if (event.asset.token_id === token) {
@@ -99,11 +99,11 @@ async function searchForToken(token, channel, count) {
 			const embed = await buildMessage(found);
 			channel.send({ embeds: [embed] });
 		}
-		else if (count < 10) {
-			setTimeout(() => {
-				searchForToken(token, channel, count + 1);
-			}, 5000);
-		}
+	}
+	if (!found && count < 10) {
+		setTimeout(() => {
+			searchForToken(token, channel, count + 1);
+		}, 5000);
 	}
 }
 
