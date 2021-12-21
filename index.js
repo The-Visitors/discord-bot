@@ -62,6 +62,7 @@ const buildMessage = async (sale) => (
 );
 
 async function searchForToken(token, channel, count) {
+	console.log(`Searching for token ${token}`);
 	count = count || 0;
 	const params = new URLSearchParams({
 		collection_slug: COLLECTION_SLUG,
@@ -71,6 +72,7 @@ async function searchForToken(token, channel, count) {
 		limit: '50',
 		occurred_after: Math.floor(((new Date().getTime()) / 1000) - 1200),
 	});
+	console.log('With params:', params);
 
 	const fetchOptions = {
 		headers: { 'X-API-KEY': OPENSEA_KEY },
@@ -81,6 +83,9 @@ async function searchForToken(token, channel, count) {
 			console.log(e);
 		});
 	const openSeaResponse = openSeaResponseObject.data;
+	if (!openSeaResponse.asset_events) {
+		console.log('no asset_events');
+	}
 	if (openSeaResponse.asset_events && openSeaResponse.asset_events.length) {
 		let found = false;
 		openSeaResponse.asset_events.forEach((event) => {
