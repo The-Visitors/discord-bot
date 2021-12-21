@@ -62,7 +62,7 @@ const buildMessage = async (sale) => (
 );
 
 async function searchForToken(token, channel, count) {
-	console.log(`Searching for token ${token}`);
+	console.log(`Searching for token ${token} attempt ${count}`);
 	count = count || 0;
 	const params = new URLSearchParams({
 		collection_slug: COLLECTION_SLUG,
@@ -82,6 +82,7 @@ async function searchForToken(token, channel, count) {
 			console.log('ERRRRR');
 			console.log(e);
 		});
+	console.log('OS Response is', openSeaResponseObject);
 	const openSeaResponse = openSeaResponseObject.data;
 	if (!openSeaResponse.asset_events) {
 		console.log('no asset_events');
