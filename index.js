@@ -72,7 +72,7 @@ async function searchForToken(token, channel, count) {
 		only_opensea: 'false',
 		offset: '0',
 		limit: '50',
-		occurred_after: Math.floor(((new Date().getTime()) / 1000) - 1200),
+		occurred_after: Math.floor(((new Date().getTime()) / 1000) - 3600),
 	});
 	console.log('With params:', params);
 
@@ -100,7 +100,7 @@ async function searchForToken(token, channel, count) {
 			channel.send({ embeds: [embed] });
 		}
 	}
-	if (!found && count < 10) {
+	if (!found && count < 30) {
 		setTimeout(() => {
 			searchForToken(token, channel, count + 1);
 		}, 5000);
