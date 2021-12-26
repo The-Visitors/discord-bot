@@ -114,18 +114,18 @@ function listenForSales(channel) {
 			searchForToken(String(value), channel);
 		}, 5000);
 	});
-	contract.on('TransferSingle', async (fromAddress, toAddress, value) => {
-		console.log(`Token ${value} Transferrred`);
-		setTimeout(() => {
-			searchForToken(String(value), channel);
-		}, 5000);
-	});
-	contract.on('TransferBatch', async (fromAddress, toAddress, value) => {
-		console.log(`Token ${value} Transferrred`);
-		setTimeout(() => {
-			searchForToken(String(value), channel);
-		}, 5000);
-	});
+	// contract.on('TransferSingle', async (fromAddress, toAddress, value) => {
+	// 	console.log(`Token ${value} Transferrred`);
+	// 	setTimeout(() => {
+	// 		searchForToken(String(value), channel);
+	// 	}, 5000);
+	// });
+	// contract.on('TransferBatch', async (fromAddress, toAddress, value) => {
+	// 	console.log(`Token ${value} Transferrred`);
+	// 	setTimeout(() => {
+	// 		searchForToken(String(value), channel);
+	// 	}, 5000);
+	// });
 }
 
 
