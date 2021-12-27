@@ -20,7 +20,7 @@ const {
 const ensprovider = new ethers.providers.JsonRpcProvider(ENS_PROVIDER_URL);
 const provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL);
 const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, ABI, provider);
-
+provider.pollingInterval = 30000;
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
