@@ -16,7 +16,9 @@ const {
 	AUTHOR_THUMBNAIL,
 	AUTHOR_URL,
 } = process.env;
-
+const fetchOptions = {
+	headers: { 'x-api-key': OPENSEA_KEY },
+};
 const ensprovider = new ethers.providers.JsonRpcProvider(ENS_PROVIDER_URL);
 const provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL);
 const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, ABI, provider);
@@ -33,16 +35,31 @@ client.once('ready', async () => {
 	listenForSales(channel);
 });
 
-async function getName(acct) {
-	if (!acct) {
-		return '?';
+async function getOpenSeaName(address) {
+	const response = await axios.get(`https://api.opensea.io/api/v1/user/${address}`, fetchOptions);
+	let username = response.data.username;
+	if (!username) {
+		username = await getENSName(address);
 	}
-	const address = acct.address;
+	else {
+		username = `[${username}](https://opensea.io/${username})`;
+	}
+	return username;
+}
+async function getENSName(address) {
 	let name = await ensprovider.lookupAddress(address).catch(() => (false));
 	if (!name) {
 		name = address.substr(0, 10);
 	}
 	return `[${name}](https://opensea.io/${address})`;
+}
+
+async function getBalance(acct) {
+	if (!acct) {
+		return '?';
+	}
+	const address = acct.address;
+	return await contract.balanceOf(address).catch(() => (0));
 }
 
 const buildMessage = async (sale) => (
@@ -53,9 +70,14 @@ const buildMessage = async (sale) => (
 		.setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
 		.setThumbnail(sale.asset.collection.image_url)
 		.addFields(
-			{ name: 'Amount', value: `${ethers.utils.formatEther(sale.total_price || '0')}${ethers.constants.EtherSymbol}` },
-			{ name: 'Buyer', value: `${await getName(sale.winner_account)}` },
-			{ name: 'Seller', value: `${await getName(sale.seller)}` },
+			{ name: 'Price', value: `${ethers.utils.formatEther(sale.total_price || '0')}${ethers.constants.EtherSymbol}`, inline: true },
+			{ name: 'Times Sold', value: sale.asset.num_sales.toLocaleString(), inline: true },
+			{ name: '\u200B', value: '\u200B', inline: true },
+			{ name: 'Buyer', value: `${await getOpenSeaName(sale.winner_account.address)}`, inline: true },
+			{ name: 'Buyer Holds', value: `${(await getBalance(sale.winner_account)).toLocaleString()}`, inline: true },
+			{ name: '\u200B', value: '\u200B', inline: true },
+			{ name: 'Seller', value: `${await getOpenSeaName(sale.seller.address)}`, inline: true },
+			{ name: 'Seller Holds', value: `${(await getBalance(sale.seller)).toLocaleString()}`, inline: true },
 		)
 		.setImage(sale.asset.image_url)
 		.setTimestamp(Date.parse(`${sale.created_date}Z`))
@@ -76,9 +98,7 @@ async function searchForToken(token, channel, count) {
 	});
 	console.log('With params:', params);
 
-	const fetchOptions = {
-		headers: { 'x-api-key': OPENSEA_KEY },
-	};
+
 	const openSeaResponseObject = await axios.get('https://api.opensea.io/api/v1/events?' + params, fetchOptions)
 		.catch((e) => {
 			console.log('ERRRRR');
