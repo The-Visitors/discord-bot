@@ -104,7 +104,7 @@ async function mint(toAddress, value, channel) {
 	const image = token.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
 	const fields = [
 		{ name: 'Minter', value: `${await getOpenSeaName(toAddress)}`, inline: true },
-		{ name: 'Minter Holds', value: `${(await getBalance(toAddress)).toLocaleString()}`, inline: true },
+		{ name: 'Minter Holds', value: `${(await getBalance({ address: toAddress })).toLocaleString()}`, inline: true },
 		{ name: '\u200B', value: '\u200B', inline: true },
 	];
 	token.attributes.forEach((attr) => {
