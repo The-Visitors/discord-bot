@@ -65,42 +65,21 @@ async function getBalance(acct) {
 	return await contract.balanceOf(address).catch(() => (0));
 }
 
-async function mint(toAddress, value, channel) {
+async function mint(toAddress, value, channel, count) {
+	count = count || 0;
 	const tokenURI = await contract.tokenURI(value);
-	const response = await axios.get(tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/'));
-	if (!response) { return; }
+	// todo: make this work for JSON tokenURI's
+	const response = await axios.get(tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/')).catch(() => (false));
+	if (!response) {
+		console.log('Error fetching token metadata');
+		if (count < 3) {
+			setTimeout(() => {
+				mint(toAddress, value, channel, count + 1);
+			}, 1000);
+		}
+		return;
+	}
 	const token = response.data;
-	// {
-	//   "name": "CryptoBurb #8274",
-	//     "description": "These burbs are up to something",
-	//       "image": "ipfs://bafybeifqf73lo2bg7nfwqbvfg3ddvxebl563l7r3tebspzkw4p7rgmyk4a/1009x2005x3014x4005x5002x6006.png",
-	//         "attributes": [
-	//           {
-	//             "trait_type": "Background",
-	//             "value": "Pink"
-	//           },
-	//           {
-	//             "trait_type": "Base",
-	//             "value": "Grey"
-	//           },
-	//           {
-	//             "trait_type": "Head",
-	//             "value": "Widow's Peak"
-	//           },
-	//           {
-	//             "trait_type": "Eyes",
-	//             "value": "Large Shades"
-	//           },
-	//           {
-	//             "trait_type": "Mouth",
-	//             "value": "Duckbill"
-	//           },
-	//           {
-	//             "trait_type": "Misc",
-	//             "value": "Pipe"
-	//           }
-	//         ]
-	// }
 	const image = token.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
 	const fields = [
 		{ name: 'Minter', value: `${await getOpenSeaName(toAddress)}`, inline: true },
