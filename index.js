@@ -2,6 +2,7 @@ const axios = require('axios');
 const ethers = require('ethers');
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const ABI = require('./abi');
+const { isMessageComponentGuildInteraction } = require('discord-api-types/utils/v9');
 if (process.env.ENVIRONMENT !== 'production') {
 	require('dotenv').config();
 }
@@ -63,6 +64,62 @@ async function getBalance(acct) {
 	return await contract.balanceOf(address).catch(() => (0));
 }
 
+async function mint(toAddress, value, channel) {
+	const token = await contract.tokenURI(value);
+	// {
+	//   "name": "CryptoBurb #8274",
+	//     "description": "These burbs are up to something",
+	//       "image": "ipfs://bafybeifqf73lo2bg7nfwqbvfg3ddvxebl563l7r3tebspzkw4p7rgmyk4a/1009x2005x3014x4005x5002x6006.png",
+	//         "attributes": [
+	//           {
+	//             "trait_type": "Background",
+	//             "value": "Pink"
+	//           },
+	//           {
+	//             "trait_type": "Base",
+	//             "value": "Grey"
+	//           },
+	//           {
+	//             "trait_type": "Head",
+	//             "value": "Widow's Peak"
+	//           },
+	//           {
+	//             "trait_type": "Eyes",
+	//             "value": "Large Shades"
+	//           },
+	//           {
+	//             "trait_type": "Mouth",
+	//             "value": "Duckbill"
+	//           },
+	//           {
+	//             "trait_type": "Misc",
+	//             "value": "Pipe"
+	//           }
+	//         ]
+	// }
+	const image = token.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
+	const fields = [
+		{ name: 'Minter', value: `${await getOpenSeaName(toAddress)}`, inline: true },
+		{ name: 'Minter Holds', value: `${(await getBalance(toAddress)).toLocaleString()}`, inline: true },
+		{ name: '\u200B', value: '\u200B', inline: true },
+	];
+	token.attributes.forEach((attr) => {
+		fields.push({
+			name: attr.trait_type,
+			value: attr.value,
+			inline: true,
+		});
+	});
+	const embed = new MessageEmbed()
+		.setColor('#0099ff')
+		.setTitle(token.name + ' minted!')
+		.setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
+		.setThumbnail(AUTHOR_THUMBNAIL)
+		.addFields(fields)
+		.setImage(image)
+		.setTimestamp();
+	channel.send({ embeds: [embed] });
+}
 const buildMessage = async (sale) => (
 	new MessageEmbed()
 		.setColor('#0099ff')
@@ -131,9 +188,14 @@ async function searchForToken(token, channel, count) {
 function listenForSales(channel) {
 	contract.on('Transfer', async (fromAddress, toAddress, value) => {
 		console.log(`Token ${value} Transferrred`);
-		setTimeout(() => {
-			searchForToken(String(value), channel);
-		}, 5000);
+		if (fromAddress === MINT_ADDRESS) {
+			mint(toAddress, value, channel);
+		}
+		else {
+			setTimeout(() => {
+				searchForToken(String(value), channel);
+			}, 5000);
+		}
 	});
 
 	contract.on('TransferSingle', async (operator, fromAddress, toAddress, value) => {
