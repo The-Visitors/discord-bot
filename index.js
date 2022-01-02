@@ -67,7 +67,7 @@ async function getBalance(acct) {
 
 async function mint(toAddress, value, channel) {
 	const tokenURI = await contract.tokenURI(value);
-	const response = await axios.get(tokenURI);
+	const response = await axios.get(tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/'));
 	if (!response) { return; }
 	const token = response.data;
 	// {
@@ -147,8 +147,8 @@ const buildMessage = async (sale) => (
 );
 
 async function searchForToken(token, channel, count) {
-	console.log(`Searching for token ${token} attempt ${count}`);
 	count = count || 0;
+	console.log(`Searching for token ${token} attempt ${count}`);
 	let found = false;
 	const params = new URLSearchParams({
 		collection_slug: COLLECTION_SLUG,
@@ -191,7 +191,7 @@ async function searchForToken(token, channel, count) {
 
 function listenForSales(channel) {
 	contract.on('Transfer', async (fromAddress, toAddress, value) => {
-		console.log(`Token ${value} Transferrred fomr ${fromAddress} to ${toAddress}`);
+		console.log(`Token ${value} Transferred from ${fromAddress} to ${toAddress}`);
 		if (fromAddress === MINT_ADDRESS) {
 			mint(toAddress, value, channel);
 		}
