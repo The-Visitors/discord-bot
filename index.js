@@ -66,7 +66,10 @@ async function getBalance(acct) {
 }
 
 async function mint(toAddress, value, channel) {
-	const token = await contract.tokenURI(value);
+	const tokenURI = await contract.tokenURI(value);
+  const response = await axios.get(tokenURI));
+  if (!response) { return; }
+  const token = response.data;
 	// {
 	//   "name": "CryptoBurb #8274",
 	//     "description": "These burbs are up to something",
