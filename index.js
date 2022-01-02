@@ -17,6 +17,7 @@ const {
 	AUTHOR_THUMBNAIL,
 	AUTHOR_URL,
 } = process.env;
+const MINT_ADDRESS = '0x0000000000000000000000000000000000000000';
 const fetchOptions = {
 	headers: { 'x-api-key': OPENSEA_KEY },
 };
