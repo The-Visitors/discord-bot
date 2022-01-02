@@ -188,7 +188,7 @@ async function searchForToken(token, channel, count) {
 
 function listenForSales(channel) {
 	contract.on('Transfer', async (fromAddress, toAddress, value) => {
-		console.log(`Token ${value} Transferrred`);
+		console.log(`Token ${value} Transferrred fomr ${fromAddress} to ${toAddress}`);
 		if (fromAddress === MINT_ADDRESS) {
 			mint(toAddress, value, channel);
 		}
