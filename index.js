@@ -40,11 +40,12 @@ client.once('ready', async () => {
 async function getOpenSeaName(address) {
 	const response = await axios.get(`https://api.opensea.io/api/v1/user/${address}`, fetchOptions)
 		.catch(() => ({ data:{} }));
-	let username = response.data.username;
-	if (!username) {
+	let username;
+	if (!response.data) {
 		username = await getENSName(address);
 	}
 	else {
+		username = response.data.username;
 		username = `[${username}](https://opensea.io/${username})`;
 	}
 	return username;
