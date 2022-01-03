@@ -135,8 +135,8 @@ async function searchForToken(token, channel, count) {
 		event_type: 'successful',
 		only_opensea: 'false',
 		offset: '0',
-		limit: '50',
-		occurred_after: Math.floor(((new Date().getTime()) / 1000) - 60 * ((count + 1) * 2)),
+		limit: '100',
+		occurred_after: Math.floor(((new Date().getTime()) / 1000) - 65 - 60 * (count * count)),
 	});
 	console.log('With params:', params);
 
