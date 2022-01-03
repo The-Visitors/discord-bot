@@ -165,7 +165,7 @@ async function searchForToken(token, channel, count) {
 	if (!found && count < 30) {
 		setTimeout(() => {
 			searchForToken(token, channel, count + 1);
-		}, count * 2000);
+		}, count * count * 1000);
 	}
 }
 
