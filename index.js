@@ -10,6 +10,7 @@ if (process.env.ENVIRONMENT !== 'production') {
 const {
 	DISCORD_TOKEN,
 	CHANNEL_ID,
+	MINT_CHANNEL_ID,
 	OPENSEA_KEY,
 	COLLECTION_SLUG,
 	ENS_PROVIDER_URL,
@@ -34,7 +35,8 @@ client.once('ready', async () => {
 	console.log('Ready!');
 	console.log(`Watching ${await contract.name()}`);
 	const channel = await client.channels.fetch(CHANNEL_ID);
-	listenForSales(channel);
+	const mintChannel = MINT_CHANNEL_ID ? (await client.channels.fetch(MINT_CHANNEL_ID)) : channel;
+	listenForSales(channel, mintChannel);
 });
 
 async function getOpenSeaName(address) {
@@ -170,11 +172,11 @@ async function searchForToken(token, channel, count) {
 	}
 }
 
-function listenForSales(channel) {
+function listenForSales(channel, mintChannel) {
 	contract.on('Transfer', async (fromAddress, toAddress, value) => {
 		console.log(`Token ${value} Transferred from ${fromAddress} to ${toAddress}`);
 		if (fromAddress === MINT_ADDRESS) {
-			mint(toAddress, value, channel);
+			mint(toAddress, value, mintChannel);
 		}
 		else {
 			setTimeout(() => {
