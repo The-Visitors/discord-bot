@@ -69,6 +69,7 @@ async function getBalance(acct) {
 async function mint(toAddress, value, channel, count) {
 	count = count || 0;
 	const tokenURI = await contract.tokenURI(value);
+	const totalSupply = (await contract.totalSupply()).toNumber();
 	// todo: make this work for JSON tokenURI's
 	const response = await axios.get(tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/')).catch(() => (false));
 	if (!response) {
@@ -85,7 +86,7 @@ async function mint(toAddress, value, channel, count) {
 	const fields = [
 		{ name: 'Minter', value: `${await getOpenSeaName(toAddress)}`, inline: true },
 		{ name: 'Minter Holds', value: `${(await getBalance({ address: toAddress })).toLocaleString()}`, inline: true },
-		{ name: '\u200B', value: '\u200B', inline: true },
+		{ name: 'Total Supply', value: totalSupply.toLocaleString(), inline: true },
 	];
 	token.attributes.forEach((attr) => {
 		fields.push({
