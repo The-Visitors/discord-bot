@@ -149,20 +149,22 @@ async function searchForToken(token, channel, count) {
 			console.log('ERRRRR');
 			console.log(e);
 		});
-	const openSeaResponse = openSeaResponseObject.data;
-	if (!openSeaResponse.asset_events) {
-		console.log('no asset_events');
-	}
-	if (openSeaResponse.asset_events) {
-		openSeaResponse.asset_events.forEach((event) => {
-			console.log(`Comparing ${token} to ${event.asset.token_id}`);
-			if (event.asset.token_id === token) {
-				found = event;
+	if (openSeaResponseObject && openSeaResponseObject.data) {
+		const openSeaResponse = openSeaResponseObject.data;
+		if (!openSeaResponse.asset_events) {
+			console.log('no asset_events');
+		}
+		if (openSeaResponse.asset_events) {
+			openSeaResponse.asset_events.forEach((event) => {
+				console.log(`Comparing ${token} to ${event.asset.token_id}`);
+				if (event.asset.token_id === token) {
+					found = event;
+				}
+			});
+			if (found && found.winner_account) {
+				const embed = await buildMessage(found);
+				channel.send({ embeds: [embed] });
 			}
-		});
-		if (found && found.winner_account) {
-			const embed = await buildMessage(found);
-			channel.send({ embeds: [embed] });
 		}
 	}
 	if (!found && count < 30) {
