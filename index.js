@@ -41,9 +41,9 @@ client.once('ready', async () => {
 
 async function getOpenSeaName(address) {
 	const response = await axios.get(`https://api.opensea.io/api/v1/user/${address}`, fetchOptions)
-		.catch(() => ({ data:{} }));
+		.catch(() => false);
 	let username;
-	if (!response.data) {
+	if (!response || !response.data) {
 		username = await getENSName(address);
 	}
 	else {
@@ -84,7 +84,7 @@ async function mint(toAddress, value, channel, count) {
 		return;
 	}
 	const token = response.data;
-	const image = token.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
+	const image = token.image.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/');
 	const fields = [
 		{ name: 'Minter', value: `${await getOpenSeaName(toAddress)}`, inline: true },
 		{ name: 'Minter Holds', value: `${(await getBalance({ address: toAddress })).toLocaleString()}`, inline: true },
@@ -156,9 +156,14 @@ async function searchForToken(token, channel, count) {
 		}
 		if (openSeaResponse.asset_events) {
 			openSeaResponse.asset_events.forEach((event) => {
-				console.log(`Comparing ${token} to ${event.asset.token_id}`);
-				if (event.asset.token_id === token) {
-					found = event;
+				if (event.asset) {
+					console.log(`Comparing ${token} to ${event.asset.token_id}`);
+					if (event.asset.token_id === token) {
+						found = event;
+					}
+				}
+				else {
+					console.log('Strange event', event);
 				}
 			});
 			if (found && found.winner_account) {
