@@ -43,7 +43,7 @@ async function getOpenSeaName(address) {
 	const response = await axios.get(`https://api.opensea.io/api/v1/user/${address}`, fetchOptions)
 		.catch(() => false);
 	let username;
-	if (!response || !response.data) {
+	if (!response || !response.data || response.data.username === 'null' || response.data.username === null) {
 		username = await getENSName(address);
 	}
 	else {
@@ -73,7 +73,7 @@ async function mint(toAddress, value, channel, count) {
 	const tokenURI = await contract.tokenURI(value);
 	const totalSupply = (await contract.totalSupply()).toNumber();
 	// todo: make this work for JSON tokenURI's
-	const response = await axios.get(tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/')).catch(() => (false));
+	const response = await axios.get(tokenURI.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/')).catch(() => (false));
 	if (!response) {
 		console.log('Error fetching token metadata');
 		if (count < 3) {
