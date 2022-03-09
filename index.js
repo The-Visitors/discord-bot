@@ -136,10 +136,6 @@ async function searchForToken(token, channel, count) {
 	const params = new URLSearchParams({
 		collection_slug: COLLECTION_SLUG,
 		event_type: 'successful',
-		only_opensea: 'false',
-		offset: '0',
-		limit: '100',
-		occurred_after: Math.floor(((new Date().getTime()) / 1000) - 65 - 60 * (count * count)),
 	});
 	console.log('With params:', params);
 
