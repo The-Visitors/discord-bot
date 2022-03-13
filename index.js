@@ -2,7 +2,16 @@ const ethers = require('ethers');
 const axios = require('axios');
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const ABI = require('./abi');
+
+const Redis = require('ioredis');
+let redis_url = process.env.REDIS_URL;
+let redisOptions = {
+  tls: { rejectUnauthorized: false },
+};
+
 if (process.env.ENVIRONMENT !== 'production') {
+  redisOptions = {};
+  redis_url = 'redis://127.0.0.1';
   require('dotenv').config();
 }
 
@@ -16,7 +25,9 @@ const {
   AUTHOR_NAME,
   AUTHOR_THUMBNAIL,
   AUTHOR_URL,
+  LISTING_CHANNEL_ID,
 } = process.env;
+
 const MINT_ADDRESS = '0x0000000000000000000000000000000000000000';
 const fetchOptions = {
   headers: { 'x-api-key': OPENSEA_KEY },
@@ -32,7 +43,8 @@ provider.pollingInterval = 30000;
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
-
+let redisClient;
+let listingChannel;
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
   console.log('Ready!');
@@ -42,6 +54,11 @@ client.once('ready', async () => {
     ? await client.channels.fetch(MINT_CHANNEL_ID)
     : channel;
   listenForSales(channel, mintChannel);
+  if (LISTING_CHANNEL_ID) {
+    listingChannel = await client.channels.fetch(LISTING_CHANNEL_ID);
+    redisClient = new Redis(redis_url, redisOptions);
+    pollListings(true);
+  }
 });
 
 async function getOpenSeaName(address) {
@@ -180,9 +197,9 @@ const buildMessage = async (sale) =>
       'https://files.readme.io/566c72b-opensea-logomark-full-colored.png'
     );
 
-async function searchForToken(token, channel, count) {
+async function searchForToken(token, from, to, channel, count) {
   count = count || 0;
-  console.log(`Searching for token ${token} attempt ${count}`);
+  console.log(`Searching for token: ${token} attempt: ${count}`);
   let found = false;
   const params = new URLSearchParams({
     collection_slug: COLLECTION_SLUG,
@@ -205,7 +222,7 @@ async function searchForToken(token, channel, count) {
       openSeaResponse.asset_events.forEach((event) => {
         if (event.asset) {
           console.log(`Comparing ${token} to ${event.asset.token_id}`);
-          if (event.asset.token_id === token) {
+          if (event.asset.token_id === token && to === event.winner_account) {
             found = event;
           }
         } else {
@@ -220,7 +237,7 @@ async function searchForToken(token, channel, count) {
   }
   if (!found && count < 30) {
     setTimeout(() => {
-      searchForToken(token, channel, count + 1);
+      searchForToken(token, from, to, channel, count + 1);
     }, count * count * 1000);
   }
 }
@@ -234,7 +251,12 @@ function listenForSales(channel, mintChannel) {
       mint(toAddress, value, mintChannel);
     } else {
       setTimeout(() => {
-        searchForToken(String(value), channel);
+        searchForToken(
+          String(value),
+          fromAddress.toString(),
+          toAddress.toString(),
+          channel
+        );
       }, 5000);
     }
   });
@@ -244,7 +266,12 @@ function listenForSales(channel, mintChannel) {
     async (operator, fromAddress, toAddress, value) => {
       console.log(`Token ${value} Transferrred`);
       setTimeout(() => {
-        searchForToken(String(value), channel);
+        searchForToken(
+          String(value),
+          fromAddress.toString(),
+          toAddress.toString(),
+          channel
+        );
       }, 5000);
     }
   );
@@ -254,11 +281,87 @@ function listenForSales(channel, mintChannel) {
       setTimeout(() => {
         values.forEach((value) => {
           console.log(`Token ${value} Transferrred`);
-          searchForToken(String(value), channel);
+          searchForToken(
+            String(value),
+            fromAddress.toString(),
+            toAddress.toString(),
+            channel
+          );
         });
       }, 5000);
     }
   );
+}
+
+async function pollListings(skipFirstTime) {
+  const params = new URLSearchParams({
+    collection_slug: COLLECTION_SLUG,
+    event_type: 'created',
+  });
+  const openSeaResponseObject = await axios
+    .get('https://api.opensea.io/api/v1/events?' + params, fetchOptions)
+    .catch((e) => {
+      console.log('ERROR Fetching Listing Events');
+      console.log(e);
+    });
+
+  if (openSeaResponseObject && openSeaResponseObject.data) {
+    const openSeaResponse = openSeaResponseObject.data;
+    if (!openSeaResponse.asset_events) {
+      console.log('no asset_events');
+    }
+    if (openSeaResponse.asset_events) {
+      for (let i = 0; i < openSeaResponse.asset_events.length; i += 1) {
+        const sale = openSeaResponse.asset_events[i];
+        const completed = await redisClient.get(`listing:${sale.id}`);
+        if (!completed) {
+          await redisClient.set(`listing:${sale.id}`, true);
+          if (!skipFirstTime) {
+            const embed = new MessageEmbed()
+              .setColor('#0099ff')
+              .setTitle(sale.asset.name + '  Listed!')
+              .setURL(sale.asset.permalink)
+              .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
+              .setThumbnail(sale.asset.collection.image_url)
+              .addFields(
+                {
+                  name: 'Price',
+                  value: `${ethers.utils.formatEther(
+                    sale.starting_price || '0'
+                  )}${ethers.constants.EtherSymbol}`,
+                  inline: true,
+                },
+                {
+                  name: 'Times Sold',
+                  value: sale.asset.num_sales.toLocaleString(),
+                  inline: true,
+                },
+                { name: '\u200B', value: '\u200B', inline: true },
+                {
+                  name: 'Seller',
+                  value: `${await getOpenSeaName(sale.seller.address)}`,
+                  inline: true,
+                },
+                {
+                  name: 'Seller Holds',
+                  value: `${(await getBalance(sale.seller)).toLocaleString()}`,
+                  inline: true,
+                }
+              )
+              .setImage(sale.asset.image_url)
+              .setTimestamp(Date.parse(`${sale.created_date}Z`))
+              .setFooter(
+                'Listed on OpenSea',
+                'https://files.readme.io/566c72b-opensea-logomark-full-colored.png'
+              );
+
+            listingChannel.send({ embeds: [embed] });
+          }
+        }
+      }
+    }
+  }
+  setTimeout(pollListings, 10000);
 }
 
 client.login(DISCORD_TOKEN);
