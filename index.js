@@ -222,7 +222,7 @@ async function searchForToken(token, from, to, channel, count) {
       openSeaResponse.asset_events.forEach((event) => {
         if (event.asset) {
           console.log(
-            `Comparing ${token} to ${event.asset.token_id}, to: ${to}, winner: ${event.winner_account}`
+            `Comparing ${token} to ${event.asset.token_id}, to: ${to}, winner: ${event.winner_account.address}`
           );
           if (event.asset.token_id === token && to === event.winner_account) {
             found = event;
@@ -283,12 +283,7 @@ function listenForSales(channel, mintChannel) {
       setTimeout(() => {
         values.forEach((value) => {
           console.log(`Token ${value} Transferrred`);
-          searchForToken(
-            String(value),
-            fromAddress.toString(),
-            toAddress.toString(),
-            channel
-          );
+          searchForToken(String(value), fromAddress, toAddress, channel);
         });
       }, 5000);
     }
