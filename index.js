@@ -4,7 +4,7 @@ const { Client, Intents, MessageEmbed } = require('discord.js');
 const ABI = require('./abi');
 
 const Redis = require('ioredis');
-let redis_url = process.env.REDIS_URL;
+let redis_url = process.env.REDIS_TLS_URL;
 let redisOptions = {
   tls: { rejectUnauthorized: false },
 };
