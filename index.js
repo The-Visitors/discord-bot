@@ -221,7 +221,9 @@ async function searchForToken(token, from, to, channel, count) {
     if (openSeaResponse.asset_events) {
       openSeaResponse.asset_events.forEach((event) => {
         if (event.asset) {
-          console.log(`Comparing ${token} to ${event.asset.token_id}`);
+          console.log(
+            `Comparing ${token} to ${event.asset.token_id}, to: ${to}, winner: ${event.winner_account}`
+          );
           if (event.asset.token_id === token && to === event.winner_account) {
             found = event;
           }
