@@ -226,7 +226,7 @@ async function searchForToken(token, from, to, channel, count) {
           );
           if (
             event.asset.token_id === token &&
-            to.toLowerCase() === event.winner_account.toLowerCase()
+            to.toLowerCase() === event.winner_account.address.toLowerCase()
           ) {
             found = event;
           }
