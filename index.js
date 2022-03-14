@@ -224,7 +224,10 @@ async function searchForToken(token, from, to, channel, count) {
           console.log(
             `Comparing ${token} to ${event.asset.token_id}, to: ${to}, winner: ${event.winner_account.address}`
           );
-          if (event.asset.token_id === token && to === event.winner_account) {
+          if (
+            event.asset.token_id === token &&
+            to.toLowerCase() === event.winner_account.toLowerCase()
+          ) {
             found = event;
           }
         } else {
