@@ -143,6 +143,7 @@ async function caged(from, value, count) {
       value: `${(await getBalance({ address: BURB_CAGE_ADDRESS })).toLocaleString()}`,
       inline: true,
     },
+    { name: '\u200B', value: '\u200B', inline: true }
   ];
   token.attributes.forEach((attr) => {
     fields.push({
