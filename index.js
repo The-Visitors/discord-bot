@@ -135,7 +135,7 @@ async function caged(from, value, count) {
   const fields = [
     {
       name: 'Cager',
-      value: `${await getOpenSeaName(from)}`,
+      value: `${await getENSName(from)}`,
       inline: true,
     },
     {
