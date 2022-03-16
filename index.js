@@ -325,6 +325,9 @@ function listenForSales(channel, mintChannel) {
   }
 
   contract.on('Transfer', async (fromAddress, toAddress, value) => {
+    if (toAddress.toLowerCase() === (BURB_CAGE_ADDRESS || '').toLowerCase()) {
+      return;
+    }
     console.log(
       `Token ${value} Transferred from ${fromAddress} to ${toAddress}`
     );
