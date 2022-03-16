@@ -2,6 +2,7 @@ const ethers = require('ethers');
 const axios = require('axios');
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const ABI = require('./abi');
+const CAGE_ABI = require('./burbcageabi');
 
 const Redis = require('ioredis');
 let redis_url = process.env.REDIS_TLS_URL;
@@ -26,7 +27,9 @@ const {
   AUTHOR_THUMBNAIL,
   AUTHOR_URL,
   LISTING_CHANNEL_ID,
-} = process.env;
+  BURB_CAGE_ADDRESS,
+  BURB_CAGE_CHANNEL_ID
+ } = process.env;
 
 const MINT_ADDRESS = '0x0000000000000000000000000000000000000000';
 const fetchOptions = {
@@ -34,6 +37,14 @@ const fetchOptions = {
 };
 const ensprovider = new ethers.providers.JsonRpcProvider(ENS_PROVIDER_URL);
 const provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL);
+let cageContract;
+if (BURB_CAGE_ADDRESS) {
+  cageContract = new ethers.Contract(
+    process.env.BURB_CAGE_ADDRESS,
+    CAGE_ABI,
+    provider
+  );
+}
 const contract = new ethers.Contract(
   process.env.CONTRACT_ADDRESS,
   ABI,
@@ -103,7 +114,6 @@ async function getBalance(acct) {
 async function caged(from, value, count) {
   count = count || 0;
   const tokenURI = await contract.tokenURI(value);
-  const totalSupply = (await contract.totalSupply()).toNumber();
   // todo: make this work for JSON tokenURI's
   const response = await axios
     .get(tokenURI.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/'))
@@ -130,7 +140,7 @@ async function caged(from, value, count) {
     },
     {
       name: 'BurbCage Holds',
-      value: `${(await getBalance({ address: '0xAa60011f71B82829df199a7E308F5070B9EBeeC2' })).toLocaleString()}`,
+      value: `${(await getBalance({ address: BURB_CAGE_ADDRESS })).toLocaleString()}`,
       inline: true,
     },
   ];
@@ -305,12 +315,14 @@ async function searchForToken(token, from, to, channel, count) {
 }
 
 function listenForSales(channel, mintChannel) {
-  contract.on('BurbCaged', async (fromAddress, tokenId) => {
-    console.log(
-      `Burb Caged! ${tokenId} caged by ${fromAddress}`
-    );
-    caged(fromAddress, tokenId);
-  });
+  if (BURB_CAGE_ADDRESS) {
+    cageContract.on('BurbCaged', async (fromAddress, tokenId) => {
+      console.log(
+        `Burb Caged! ${tokenId} caged by ${fromAddress}`
+      );
+      caged(fromAddress, tokenId);
+    });
+  }
 
   contract.on('Transfer', async (fromAddress, toAddress, value) => {
     console.log(
