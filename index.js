@@ -45,6 +45,8 @@ provider.pollingInterval = 30000;
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 let redisClient;
 let listingChannel;
+let burbCageChannel;
+
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
   console.log('Ready!');
@@ -54,6 +56,9 @@ client.once('ready', async () => {
     ? await client.channels.fetch(MINT_CHANNEL_ID)
     : channel;
   listenForSales(channel, mintChannel);
+  if (BURB_CAGE_CHANNEL_ID) {
+    burbCageChannel = await client.channels.fetch(BURB_CAGE_CHANNEL_ID);
+  }
   if (LISTING_CHANNEL_ID) {
     listingChannel = await client.channels.fetch(LISTING_CHANNEL_ID);
     redisClient = new Redis(redis_url, redisOptions);
@@ -93,6 +98,58 @@ async function getBalance(acct) {
   }
   const address = acct.address;
   return await contract.balanceOf(address).catch(() => 0);
+}
+
+async function caged(from, value, count) {
+  count = count || 0;
+  const tokenURI = await contract.tokenURI(value);
+  const totalSupply = (await contract.totalSupply()).toNumber();
+  // todo: make this work for JSON tokenURI's
+  const response = await axios
+    .get(tokenURI.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/'))
+    .catch(() => false);
+  if (!response) {
+    console.log('Error fetching token metadata');
+    if (count < 3) {
+      setTimeout(() => {
+        caged(from, value, count + 1);
+      }, 1000);
+    }
+    return;
+  }
+  const token = response.data;
+  const image = token.image.replace(
+    'ipfs://',
+    'https://0x420.mypinata.cloud/ipfs/'
+  );
+  const fields = [
+    {
+      name: 'Cager',
+      value: `${await getOpenSeaName(from)}`,
+      inline: true,
+    },
+    {
+      name: 'BurbCage Holds',
+      value: `${(await getBalance({ address: '0xAa60011f71B82829df199a7E308F5070B9EBeeC2' })).toLocaleString()}`,
+      inline: true,
+    },
+  ];
+  token.attributes.forEach((attr) => {
+    fields.push({
+      name: attr.trait_type,
+      value: attr.value,
+      inline: true,
+    });
+  });
+  const embed = new MessageEmbed()
+    .setColor('#0099ff')
+    .setTitle(token.name + ' Caged!')
+    .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
+    .setThumbnail(AUTHOR_THUMBNAIL)
+    .addFields(fields)
+    .setImage(image)
+    .setTimestamp();
+  burbCageChannel.send({ embeds: [embed] });
 }
 
 async function mint(toAddress, value, channel, count) {
@@ -248,6 +305,13 @@ async function searchForToken(token, from, to, channel, count) {
 }
 
 function listenForSales(channel, mintChannel) {
+  contract.on('BurbCaged', async (fromAddress, tokenId) => {
+    console.log(
+      `Burb Caged! ${tokenId} caged by ${fromAddress}`
+    );
+    caged(fromAddress, tokenId);
+  });
+
   contract.on('Transfer', async (fromAddress, toAddress, value) => {
     console.log(
       `Token ${value} Transferred from ${fromAddress} to ${toAddress}`
