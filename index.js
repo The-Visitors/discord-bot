@@ -198,13 +198,15 @@ async function mint(toAddress, value, channel, count) {
     },
     { name: 'Total Supply', value: totalSupply.toLocaleString(), inline: true },
   ];
-  token.attributes.forEach((attr) => {
-    fields.push({
-      name: attr.trait_type,
-      value: attr.value,
-      inline: true,
+  if (token.attributes) {
+    token.attributes.forEach((attr) => {
+      fields.push({
+        name: attr.trait_type,
+        value: attr.value,
+        inline: true,
+      });
     });
-  });
+  }
   const embed = new MessageEmbed()
     .setColor('#0099ff')
     .setTitle(token.name + ' minted!')
