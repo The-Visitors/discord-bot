@@ -20,6 +20,7 @@ const {
   DISCORD_TOKEN,
   CHANNEL_ID,
   MINT_CHANNEL_ID,
+  BURN_CHANNEL_ID,
   OPENSEA_KEY,
   COLLECTION_SLUG,
   ENS_PROVIDER_URL,
@@ -66,7 +67,10 @@ client.once('ready', async () => {
   const mintChannel = MINT_CHANNEL_ID
     ? await client.channels.fetch(MINT_CHANNEL_ID)
     : channel;
-  listenForSales(channel, mintChannel);
+  const burnChannel = BURN_CHANNEL_ID
+    ? await client.channels.fetch(BURN_CHANNEL_ID)
+    : false;
+  listenForSales(channel, mintChannel, burnChannel);
   if (BURB_CAGE_CHANNEL_ID) {
     burbCageChannel = await client.channels.fetch(BURB_CAGE_CHANNEL_ID);
   }
@@ -208,6 +212,60 @@ async function mint(toAddress, value, channel, count) {
     });
   }
   const embed = new MessageEmbed()
+    .setColor('#FF0000')
+    .setTitle(token.name + ' Burned!')
+    .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
+    .setThumbnail(AUTHOR_THUMBNAIL)
+    .addFields(fields)
+    .setImage(image)
+    .setTimestamp();
+  channel.send({ embeds: [embed] });
+}
+async function burn(fromAddress, value, channel, count) {
+  count = count || 0;
+  const tokenURI = await contract.tokenURI(value);
+  const totalSupply = (await contract.totalSupply()).toNumber();
+  // todo: make this work for JSON tokenURI's
+  const response = await axios
+    .get(tokenURI.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/'))
+    .catch(() => false);
+  if (!response) {
+    console.log('Error fetching token metadata');
+    if (count < 3) {
+      setTimeout(() => {
+        burn(fromAddress, value, channel, count + 1);
+      }, 1000);
+    }
+    return;
+  }
+  const token = response.data;
+  const image = token.image.replace(
+    'ipfs://',
+    'https://0x420.mypinata.cloud/ipfs/'
+  );
+  const fields = [
+    {
+      name: 'Burner',
+      value: `${await getOpenSeaName(fromAddress)}`,
+      inline: true,
+    },
+    {
+      name: 'Burner Holds',
+      value: `${(await getBalance({ address: fromAddress })).toLocaleString()}`,
+      inline: true,
+    },
+    { name: 'Total Supply', value: totalSupply.toLocaleString(), inline: true },
+  ];
+  if (token.attributes) {
+    token.attributes.forEach((attr) => {
+      fields.push({
+        name: attr.trait_type,
+        value: attr.value,
+        inline: true,
+      });
+    });
+  }
+  const embed = new MessageEmbed()
     .setColor('#0099ff')
     .setTitle(token.name + ' minted!')
     .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
@@ -317,7 +375,7 @@ async function searchForToken(token, from, to, channel, count) {
   }
 }
 
-function listenForSales(channel, mintChannel) {
+function listenForSales(channel, mintChannel, burnChannel) {
   if (BURB_CAGE_ADDRESS) {
     cageContract.on('BurbCaged', async (fromAddress, tokenId) => {
       console.log(
@@ -336,6 +394,10 @@ function listenForSales(channel, mintChannel) {
     );
     if (fromAddress === MINT_ADDRESS) {
       mint(toAddress, value, mintChannel);
+    } else if (toAddress === MINT_ADDRESS) {
+      if (burnChannel) {
+        burn(fromAddress, value, burnChannel);
+      }
     } else {
       setTimeout(() => {
         searchForToken(
