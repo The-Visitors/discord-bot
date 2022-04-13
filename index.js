@@ -223,7 +223,7 @@ async function mint(toAddress, value, channel, count) {
 }
 async function burn(fromAddress, value, channel, count) {
   count = count || 0;
-  const tokenURI = await contract.tokenURI(value);
+  const tokenURI = `https://gemma.art/api/nft/${value}`;
   const totalSupply = (await contract.totalSupply()).toNumber();
   // todo: make this work for JSON tokenURI's
   const response = await axios
