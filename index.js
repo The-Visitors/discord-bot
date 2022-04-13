@@ -213,7 +213,7 @@ async function mint(toAddress, value, channel, count) {
   }
   const embed = new MessageEmbed()
     .setColor('#FF0000')
-    .setTitle(token.name + ' Burned!')
+    .setTitle(token.name + ' minted!')
     .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
     .setThumbnail(AUTHOR_THUMBNAIL)
     .addFields(fields)
@@ -267,7 +267,7 @@ async function burn(fromAddress, value, channel, count) {
   }
   const embed = new MessageEmbed()
     .setColor('#0099ff')
-    .setTitle(token.name + ' minted!')
+    .setTitle(token.name + ' burned!')
     .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
     .setThumbnail(AUTHOR_THUMBNAIL)
     .addFields(fields)
