@@ -32,7 +32,7 @@ const {
   BURB_CAGE_CHANNEL_ID
  } = process.env;
 
-const MINT_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const fetchOptions = {
   headers: { 'x-api-key': OPENSEA_KEY },
 };
@@ -392,9 +392,9 @@ function listenForSales(channel, mintChannel, burnChannel) {
     console.log(
       `Token ${value} Transferred from ${fromAddress} to ${toAddress}`
     );
-    if (fromAddress === MINT_ADDRESS) {
+    if (fromAddress === ZERO_ADDRESS) {
       mint(toAddress, value, mintChannel);
-    } else if (toAddress === MINT_ADDRESS) {
+    } else if (toAddress === ZERO_ADDRESS) {
       if (burnChannel) {
         burn(fromAddress, value, burnChannel);
       }
