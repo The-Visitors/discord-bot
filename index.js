@@ -171,7 +171,7 @@ async function caged(from, value, count) {
   burbCageChannel.send({ embeds: [embed] });
 }
 
-async function mint(toAddress, value, channel, count) {
+async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
   count = count || 0;
   const tokenURI = await contract.tokenURI(value);
   const totalSupply = (await contract.totalSupply()).toNumber();
@@ -183,7 +183,7 @@ async function mint(toAddress, value, channel, count) {
     console.log('Error fetching token metadata');
     if (count < 3) {
       setTimeout(() => {
-        mint(toAddress, value, channel, count + 1);
+        mint(toAddress, value, channel, count + 1, gasPrice, gasUsed);
       }, 1000);
     }
     return;
@@ -215,6 +215,19 @@ async function mint(toAddress, value, channel, count) {
       });
     });
   }
+
+  if (gasPrice && gasUsed) {
+    fields.push({
+        name: 'Gas Price',
+        value: `${gasPrice} Gwei`,
+        inline: true,
+      });
+    fields.push({
+        name: 'Gas Spent',
+        value: `${gasUsed} Ether`,
+        inline: true,
+      });
+  }
   const embed = new MessageEmbed()
     .setColor('#0099ff')
     .setTitle(token.name + ' minted!')
@@ -225,7 +238,7 @@ async function mint(toAddress, value, channel, count) {
     .setTimestamp();
   channel.send({ embeds: [embed] });
 }
-async function burn(fromAddress, value, channel, count) {
+async function burn(fromAddress, value, channel, count, gasPrice, gasUsed) {
   count = count || 0;
   const tokenURI = `https://gemma.art/api/nft/${value}`;
   const totalSupply = (await contract.totalSupply()).toNumber();
@@ -260,6 +273,19 @@ async function burn(fromAddress, value, channel, count) {
     },
     { name: 'Total Supply', value: totalSupply.toLocaleString(), inline: true },
   ];
+
+  if (gasPrice && gasUsed) {
+    fields.push({
+        name: 'Gas Price',
+        value: `${gasPrice} Gwei`,
+        inline: true,
+      });
+    fields.push({
+        name: 'Gas Spent',
+        value: `${gasUsed} Ether`,
+        inline: true,
+      });
+  }
   if (token.attributes) {
     token.attributes.forEach((attr) => {
       fields.push({
@@ -279,57 +305,72 @@ async function burn(fromAddress, value, channel, count) {
     .setTimestamp();
   channel.send({ embeds: [embed] });
 }
-const buildMessage = async (sale) =>
+const buildMessage = async (sale, gasPrice, gasUsed) => {
+  const fields = [
+    {
+      name: 'Price',
+      value: `${ethers.utils.formatEther(sale.total_price || '0')}${
+        ethers.constants.EtherSymbol
+      }`,
+      inline: true,
+    },
+    {
+      name: 'Times Sold',
+      value: sale.asset.num_sales.toLocaleString(),
+      inline: true,
+    },
+    { name: '\u200B', value: '\u200B', inline: true },
+    {
+      name: 'Buyer',
+      value: `${await getOpenSeaName(sale.winner_account.address)}`,
+      inline: true,
+    },
+    {
+      name: 'Buyer Holds',
+      value: `${(await getBalance(sale.winner_account)).toLocaleString()}`,
+      inline: true,
+    },
+    { name: '\u200B', value: '\u200B', inline: true },
+    {
+      name: 'Seller',
+      value: `${await getOpenSeaName(sale.seller.address)}`,
+      inline: true,
+    },
+    {
+      name: 'Seller Holds',
+      value: `${(await getBalance(sale.seller)).toLocaleString()}`,
+      inline: true,
+    }
+  ];
+  if (gasPrice && gasUsed) {
+    fields.push({
+        name: 'Gas Price',
+        value: `${gasPrice} Gwei`,
+        inline: true,
+      });
+    fields.push({
+        name: 'Gas Spent',
+        value: `${gasUsed} Ether`,
+        inline: true,
+      });
+  }
+
   new MessageEmbed()
     .setColor('#0099ff')
     .setTitle(sale.asset.name + ' sold!')
     .setURL(sale.asset.permalink)
     .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
     .setThumbnail(sale.asset.collection.image_url)
-    .addFields(
-      {
-        name: 'Price',
-        value: `${ethers.utils.formatEther(sale.total_price || '0')}${
-          ethers.constants.EtherSymbol
-        }`,
-        inline: true,
-      },
-      {
-        name: 'Times Sold',
-        value: sale.asset.num_sales.toLocaleString(),
-        inline: true,
-      },
-      { name: '\u200B', value: '\u200B', inline: true },
-      {
-        name: 'Buyer',
-        value: `${await getOpenSeaName(sale.winner_account.address)}`,
-        inline: true,
-      },
-      {
-        name: 'Buyer Holds',
-        value: `${(await getBalance(sale.winner_account)).toLocaleString()}`,
-        inline: true,
-      },
-      { name: '\u200B', value: '\u200B', inline: true },
-      {
-        name: 'Seller',
-        value: `${await getOpenSeaName(sale.seller.address)}`,
-        inline: true,
-      },
-      {
-        name: 'Seller Holds',
-        value: `${(await getBalance(sale.seller)).toLocaleString()}`,
-        inline: true,
-      }
-    )
+    .addFields(fields)
     .setImage(sale.asset.image_url)
     .setTimestamp(Date.parse(`${sale.created_date}Z`))
     .setFooter(
       'Sold on OpenSea',
       'https://files.readme.io/566c72b-opensea-logomark-full-colored.png'
     );
+}
 
-async function searchForToken(token, from, to, channel, count) {
+async function searchForToken(token, from, to, channel, count, gasPrice, gasUsed) {
   count = count || 0;
   console.log(`Searching for token: ${token} attempt: ${count}`);
   let found = false;
@@ -367,14 +408,14 @@ async function searchForToken(token, from, to, channel, count) {
         }
       });
       if (found && found.winner_account) {
-        const embed = await buildMessage(found);
+        const embed = await buildMessage(found, gasPrice, gasUsed);
         channel.send({ embeds: [embed] });
       }
     }
   }
   if (!found && count < 30) {
     setTimeout(() => {
-      searchForToken(token, from, to, channel, count + 1);
+      searchForToken(token, from, to, channel, count + 1, gasPrice, gasUsed);
     }, count * count * 1000);
   }
 }
@@ -389,18 +430,22 @@ function listenForSales(channel, mintChannel, burnChannel) {
     });
   }
 
-  contract.on('Transfer', async (fromAddress, toAddress, value) => {
+  contract.on('Transfer', async (fromAddress, toAddress, value, event) => {
     if (toAddress.toLowerCase() === (BURB_CAGE_ADDRESS || '').toLowerCase()) {
       return;
     }
+    const receipt = await event.getTransactionReceipt();
+    const gasPrice =  ethers.utils.formatUnits(receipt.effectiveGasPrice, 'gwei');
+    const gasUsed = ethers.utils.formatUnits(receipt.gasUsed.mul(receipt.effectiveGasPrice), 'ether');
+
     console.log(
       `Token ${value} Transferred from ${fromAddress} to ${toAddress}`
     );
     if (fromAddress === ZERO_ADDRESS) {
-      mint(toAddress, value, mintChannel);
+      mint(toAddress, value, mintChannel, 0, gasPrice, gasUsed);
     } else if (toAddress === ZERO_ADDRESS) {
       if (burnChannel) {
-        burn(fromAddress, value, burnChannel);
+        burn(fromAddress, value, burnChannel, 0, gasPrice, gasUsed);
       }
     } else {
       setTimeout(() => {
@@ -408,7 +453,7 @@ function listenForSales(channel, mintChannel, burnChannel) {
           String(value),
           fromAddress.toString(),
           toAddress.toString(),
-          channel
+          channel, 0, gasPrice, gasUsed
         );
       }, 5000);
     }
