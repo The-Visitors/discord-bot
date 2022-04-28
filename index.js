@@ -81,6 +81,10 @@ client.once('ready', async () => {
   }
 });
 
+client.on("error", function(error){
+  console.error(`client's WebSocket encountered a connection error: ${error}`);
+});
+
 async function getOpenSeaName(address) {
   const response = await axios
     .get(`https://api.opensea.io/api/v1/user/${address}`, fetchOptions)
@@ -508,4 +512,5 @@ async function pollListings(skipFirstTime) {
   setTimeout(pollListings, 10000);
 }
 
+console.log('logging in discord client');
 client.login(DISCORD_TOKEN);
