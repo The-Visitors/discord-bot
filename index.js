@@ -355,7 +355,7 @@ const buildMessage = async (sale, gasPrice, gasUsed) => {
       });
   }
 
-  new MessageEmbed()
+  return new MessageEmbed()
     .setColor('#0099ff')
     .setTitle(sale.asset.name + ' sold!')
     .setURL(sale.asset.permalink)
