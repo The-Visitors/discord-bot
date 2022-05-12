@@ -29,8 +29,8 @@ const {
   AUTHOR_URL,
   LISTING_CHANNEL_ID,
   BURB_CAGE_ADDRESS,
-  BURB_CAGE_CHANNEL_ID
- } = process.env;
+  BURB_CAGE_CHANNEL_ID,
+} = process.env;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const fetchOptions = {
@@ -81,7 +81,7 @@ client.once('ready', async () => {
   }
 });
 
-client.on("error", function(error){
+client.on('error', function (error) {
   console.error(`client's WebSocket encountered a connection error: ${error}`);
 });
 
@@ -148,10 +148,12 @@ async function caged(from, value, count) {
     },
     {
       name: 'BurbCage Holds',
-      value: `${(await getBalance({ address: BURB_CAGE_ADDRESS })).toLocaleString()}`,
+      value: `${(
+        await getBalance({ address: BURB_CAGE_ADDRESS })
+      ).toLocaleString()}`,
       inline: true,
     },
-    { name: '\u200B', value: '\u200B', inline: true }
+    { name: '\u200B', value: '\u200B', inline: true },
   ];
   token.attributes.forEach((attr) => {
     fields.push({
@@ -173,6 +175,7 @@ async function caged(from, value, count) {
 
 async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
   count = count || 0;
+  const tokenId = value;
   const tokenURI = await contract.tokenURI(value);
   const totalSupply = (await contract.totalSupply()).toNumber();
   // todo: make this work for JSON tokenURI's
@@ -218,18 +221,21 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
 
   if (gasPrice && gasUsed) {
     fields.push({
-        name: 'Gas Price',
-        value: `${gasPrice} Gwei`,
-        inline: true,
-      });
+      name: 'Gas Price',
+      value: `${gasPrice} Gwei`,
+      inline: true,
+    });
     fields.push({
-        name: 'Gas Spent',
-        value: `${gasUsed} Ether`,
-        inline: true,
-      });
+      name: 'Gas Spent',
+      value: `${gasUsed} Ether`,
+      inline: true,
+    });
   }
   const embed = new MessageEmbed()
     .setColor('#0099ff')
+    .setURL(
+      `https://opensea.io/assets/${process.env.CONTRACT_ADDRESS}/${tokenId}`
+    ) // todo this needs to handle /matic/
     .setTitle(token.name + ' minted!')
     .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
     .setThumbnail(AUTHOR_THUMBNAIL)
@@ -276,15 +282,15 @@ async function burn(fromAddress, value, channel, count, gasPrice, gasUsed) {
 
   if (gasPrice && gasUsed) {
     fields.push({
-        name: 'Gas Price',
-        value: `${gasPrice} Gwei`,
-        inline: true,
-      });
+      name: 'Gas Price',
+      value: `${gasPrice} Gwei`,
+      inline: true,
+    });
     fields.push({
-        name: 'Gas Spent',
-        value: `${gasUsed} Ether`,
-        inline: true,
-      });
+      name: 'Gas Spent',
+      value: `${gasUsed} Ether`,
+      inline: true,
+    });
   }
   if (token.attributes) {
     token.attributes.forEach((attr) => {
@@ -340,19 +346,19 @@ const buildMessage = async (sale, gasPrice, gasUsed) => {
       name: 'Seller Holds',
       value: `${(await getBalance(sale.seller)).toLocaleString()}`,
       inline: true,
-    }
+    },
   ];
   if (gasPrice && gasUsed) {
     fields.push({
-        name: 'Gas Price',
-        value: `${gasPrice} Gwei`,
-        inline: true,
-      });
+      name: 'Gas Price',
+      value: `${gasPrice} Gwei`,
+      inline: true,
+    });
     fields.push({
-        name: 'Gas Spent',
-        value: `${gasUsed} Ether`,
-        inline: true,
-      });
+      name: 'Gas Spent',
+      value: `${gasUsed} Ether`,
+      inline: true,
+    });
   }
 
   return new MessageEmbed()
@@ -368,9 +374,17 @@ const buildMessage = async (sale, gasPrice, gasUsed) => {
       'Sold on OpenSea',
       'https://files.readme.io/566c72b-opensea-logomark-full-colored.png'
     );
-}
+};
 
-async function searchForToken(token, from, to, channel, count, gasPrice, gasUsed) {
+async function searchForToken(
+  token,
+  from,
+  to,
+  channel,
+  count,
+  gasPrice,
+  gasUsed
+) {
   count = count || 0;
   console.log(`Searching for token: ${token} attempt: ${count}`);
   let found = false;
@@ -423,9 +437,7 @@ async function searchForToken(token, from, to, channel, count, gasPrice, gasUsed
 function listenForSales(channel, mintChannel, burnChannel) {
   if (BURB_CAGE_ADDRESS) {
     cageContract.on('BurbCaged', async (fromAddress, tokenId) => {
-      console.log(
-        `Burb Caged! ${tokenId} caged by ${fromAddress}`
-      );
+      console.log(`Burb Caged! ${tokenId} caged by ${fromAddress}`);
       caged(fromAddress, tokenId);
     });
   }
@@ -435,8 +447,14 @@ function listenForSales(channel, mintChannel, burnChannel) {
       return;
     }
     const receipt = await event.getTransactionReceipt();
-    const gasPrice =  ethers.utils.formatUnits(receipt.effectiveGasPrice, 'gwei');
-    const gasUsed = ethers.utils.formatUnits(receipt.gasUsed.mul(receipt.effectiveGasPrice), 'ether');
+    const gasPrice = ethers.utils.formatUnits(
+      receipt.effectiveGasPrice,
+      'gwei'
+    );
+    const gasUsed = ethers.utils.formatUnits(
+      receipt.gasUsed.mul(receipt.effectiveGasPrice),
+      'ether'
+    );
 
     console.log(
       `Token ${value} Transferred from ${fromAddress} to ${toAddress}`
@@ -453,7 +471,10 @@ function listenForSales(channel, mintChannel, burnChannel) {
           String(value),
           fromAddress.toString(),
           toAddress.toString(),
-          channel, 0, gasPrice, gasUsed
+          channel,
+          0,
+          gasPrice,
+          gasUsed
         );
       }, 5000);
     }
