@@ -531,9 +531,10 @@ async function pollListings(skipFirstTime) {
         if (!completed) {
           await redisClient.set(`listing:${sale.id}`, true);
           if (!skipFirstTime) {
+            const name = (sale && sale.asset && sale.asset.name) || '?';
             const embed = new MessageEmbed()
               .setColor('#0099ff')
-              .setTitle(sale.asset.name + '  Listed!')
+              .setTitle(name + '  Listed!')
               .setURL(sale.asset.permalink)
               .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
               .setThumbnail(sale.asset.collection.image_url)
