@@ -527,6 +527,16 @@ async function pollListings(skipFirstTime) {
     if (openSeaResponse.asset_events) {
       for (let i = 0; i < openSeaResponse.asset_events.length; i += 1) {
         const sale = openSeaResponse.asset_events[i];
+        if (
+          !sale.id ||
+          !sale.asset ||
+          !sale.asset.name ||
+          !sale.asset.permalink
+        ) {
+          console.log('weird asset for sale ' + sale.id);
+          console.log(sale.asset);
+          continue;
+        }
         const completed = await redisClient.get(`listing:${sale.id}`);
         if (!completed) {
           await redisClient.set(`listing:${sale.id}`, true);
