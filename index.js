@@ -549,7 +549,7 @@ async function pollListings(skipFirstTime) {
           if (!skipFirstTime) {
             const name = (sale && sale.asset && sale.asset.name) || '?';
             let image = sale.asset.image_url;
-            if (sale.seller.address === '0x9F515f3B8EFb88FBFB24D4bBe624abFF7ba7e7ce') {
+            if (sale.seller.address.toLowerCase() === '0x9F515f3B8EFb88FBFB24D4bBe624abFF7ba7e7ce'.toLowerCase()) {
               image = 'https://0x420.mypinata.cloud/ipfs/QmVjXXaFxW87R6Fe5Pwdwrr5CkDTtkBvaj6FM5qmKcMyGG';
             }
             const embed = new MessageEmbed()
