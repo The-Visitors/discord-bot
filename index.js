@@ -548,6 +548,10 @@ async function pollListings(skipFirstTime) {
           await redisClient.set(`listing:${sale.id}`, true);
           if (!skipFirstTime) {
             const name = (sale && sale.asset && sale.asset.name) || '?';
+            let image = sale.asset.image_url;
+            if (sale.seller.address === '0x9F515f3B8EFb88FBFB24D4bBe624abFF7ba7e7ce') {
+              image = 'https://0x420.mypinata.cloud/ipfs/QmVjXXaFxW87R6Fe5Pwdwrr5CkDTtkBvaj6FM5qmKcMyGG';
+            }
             const embed = new MessageEmbed()
               .setColor('#0099ff')
               .setTitle(name + '  Listed!')
@@ -579,7 +583,7 @@ async function pollListings(skipFirstTime) {
                   inline: true,
                 }
               )
-              .setImage(sale.asset.image_url)
+              .setImage(image)
               .setTimestamp(Date.parse(`${sale.created_date}Z`))
               .setFooter(
                 'Listed on OpenSea',
