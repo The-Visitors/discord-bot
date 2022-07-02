@@ -440,7 +440,7 @@ async function searchForToken(
 
 function keepAlive() {
   contract.name().then((r) => {
-    console.log(`Keep Alive for ${r}`);
+    // console.log(`Keep Alive for ${r}`);
   });
 }
 
