@@ -181,10 +181,14 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
   // todo: make this work for JSON tokenURI's
   const response = await axios
     .get(tokenURI.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/'))
-    .catch(() => false);
+    .catch((e) => {
+      console.log(`error fetching tokenURI: ${tokenURI}`);
+      console.log(e);
+      return false;
+    });
   if (!response) {
     console.log('Error fetching token metadata');
-    if (count < 3) {
+    if (count < 10) {
       setTimeout(() => {
         mint(toAddress, value, channel, count + 1, gasPrice, gasUsed);
       }, 1000);
