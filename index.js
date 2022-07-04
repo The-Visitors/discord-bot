@@ -179,6 +179,7 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
   const tokenURI = await contract.tokenURI(value);
   const totalSupply = (await contract.totalSupply()).toNumber();
   // todo: make this work for JSON tokenURI's
+  console.log(`MintBot fetching ${tokenURI}`);
   const response = await axios
     .get(tokenURI.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/'))
     .catch((error) => {
@@ -203,9 +204,12 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
   if (!response) {
     console.log('Error fetching token metadata');
     if (count < 10) {
+      console.log(`Checking ${value} again in 5 seconds. ${count} / 10`);
       setTimeout(() => {
         mint(toAddress, value, channel, count + 1, gasPrice, gasUsed);
       }, 5000);
+    } else {
+      console.log(`Giving up on ${value}`);
     }
     return;
   }
