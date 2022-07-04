@@ -203,8 +203,8 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
     });
   if (!response) {
     console.log('Error fetching token metadata');
-    if (count < 10) {
-      console.log(`Checking ${value} again in 5 seconds. ${count} / 10`);
+    if (count < 30) {
+      console.log(`Checking ${value} again in 5 seconds. ${count} / 30`);
       setTimeout(() => {
         mint(toAddress, value, channel, count + 1, gasPrice, gasUsed);
       }, 5000);
