@@ -181,9 +181,23 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
   // todo: make this work for JSON tokenURI's
   const response = await axios
     .get(tokenURI.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/'))
-    .catch((e) => {
+    .catch((error) => {
       console.log(`error fetching tokenURI: ${tokenURI}`);
-      console.log(e);
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.log(error.response.data);
+        console.log(error.response.status);
+        console.log(error.response.headers);
+      } else if (error.request) {
+        // The request was made but no response was received
+        // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+        // http.ClientRequest in node.js
+        console.log(error.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.log('Error', error.message);
+      }
       return false;
     });
   if (!response) {
@@ -191,7 +205,7 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
     if (count < 10) {
       setTimeout(() => {
         mint(toAddress, value, channel, count + 1, gasPrice, gasUsed);
-      }, 1000);
+      }, 5000);
     }
     return;
   }
