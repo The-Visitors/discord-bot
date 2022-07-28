@@ -561,7 +561,7 @@ async function pollListings(skipFirstTime) {
           !sale.asset.name ||
           !sale.asset.permalink
         ) {
-          console.log('weird asset for sale ' + sale.id);
+          console.log('weird asset for listing ' + sale.id);
           console.log(sale.asset);
           continue;
         }
@@ -574,6 +574,9 @@ async function pollListings(skipFirstTime) {
             if (sale.seller.address.toLowerCase() === '0x9F515f3B8EFb88FBFB24D4bBe624abFF7ba7e7ce'.toLowerCase()) {
               continue;
               // image = 'https://0x420.mypinata.cloud/ipfs/QmVjXXaFxW87R6Fe5Pwdwrr5CkDTtkBvaj6FM5qmKcMyGG';
+            }
+            if (sale.seller.address.toLowerCase() === '0xbA7a5953A02dA87Fabd001a88794A5C33eaFBb14'.toLowerCase()) {
+              continue;
             }
             const embed = new MessageEmbed()
               .setColor('#0099ff')
