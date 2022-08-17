@@ -115,7 +115,7 @@ async function getBalance(acct, id) {
   if (!acct) {
     return '?';
   }
-  const address = acct.address;
+  const address = acct.address || acct;
   let balance;
   try {
     balance = await contract.balanceOf(address);
