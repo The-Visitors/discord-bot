@@ -119,12 +119,12 @@ async function getBalance(acct, id) {
   let balance;
   console.log(`checking balance of ${address}`);
   try {
-    balance = await contract.balanceOf(address);
+    balance = await contract["balanceOf(address)"](address);
   } catch (e) {
     console.log(`Err! ${e}`);
     try {
       console.log(`Error! checking balance of ${address}, ${id}`);
-      balance = await contract.balanceOf(address, parseInt(id, 10));
+      balance = await contract["balanceOf(address,uint256)"](address, parseInt(id, 10));
     } catch (e) {
       console.log(`Err! ${e}`);
     }
