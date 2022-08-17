@@ -111,12 +111,20 @@ async function getENSName(address) {
   return `[${name}](https://opensea.io/${address})`;
 }
 
-async function getBalance(acct) {
+async function getBalance(acct, id) {
   if (!acct) {
     return '?';
   }
   const address = acct.address;
-  return await contract.balanceOf(address).catch(() => 0);
+  let balance;
+  try {
+    balance = await contract.balanceOf(address);
+  } catch (_) {
+    try {
+      balance = await contract.balanceOf(address, id);
+    } catch (_) {}
+  }
+  return balance || 0;
 }
 
 async function caged(from, value, count) {
@@ -149,7 +157,7 @@ async function caged(from, value, count) {
     {
       name: 'BurbCage Holds',
       value: `${(
-        await getBalance({ address: BURB_CAGE_ADDRESS })
+        await getBalance(BURB_CAGE_ADDRESS)
       ).toLocaleString()}`,
       inline: true,
     },
@@ -226,7 +234,7 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
     },
     {
       name: 'Minter Holds',
-      value: `${(await getBalance({ address: toAddress })).toLocaleString()}`,
+      value: `${(await getBalance(toAddress, value)).toLocaleString()}`,
       inline: true,
     },
     { name: 'Total Supply', value: totalSupply.toLocaleString(), inline: true },
@@ -296,7 +304,7 @@ async function burn(fromAddress, value, channel, count, gasPrice, gasUsed) {
     },
     {
       name: 'Burner Holds',
-      value: `${(await getBalance({ address: fromAddress })).toLocaleString()}`,
+      value: `${(await getBalance(fromAddress, value)).toLocaleString()}`,
       inline: true,
     },
     { name: 'Total Supply', value: totalSupply.toLocaleString(), inline: true },
@@ -355,7 +363,7 @@ const buildMessage = async (sale, gasPrice, gasUsed) => {
     },
     {
       name: 'Buyer Holds',
-      value: `${(await getBalance(sale.winner_account)).toLocaleString()}`,
+      value: `${(await getBalance(sale.winner_account, sale.asset.token_id)).toLocaleString()}`,
       inline: true,
     },
     { name: '\u200B', value: '\u200B', inline: true },
@@ -366,7 +374,7 @@ const buildMessage = async (sale, gasPrice, gasUsed) => {
     },
     {
       name: 'Seller Holds',
-      value: `${(await getBalance(sale.seller)).toLocaleString()}`,
+      value: `${(await getBalance(sale.seller, sale.asset.token_id)).toLocaleString()}`,
       inline: true,
     },
   ];
@@ -605,7 +613,7 @@ async function pollListings(skipFirstTime) {
                 },
                 {
                   name: 'Seller Holds',
-                  value: `${(await getBalance(sale.seller)).toLocaleString()}`,
+                  value: `${(await getBalance(sale.seller, sale.asset.token_id)).toLocaleString()}`,
                   inline: true,
                 }
               )
