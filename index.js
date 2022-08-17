@@ -117,12 +117,17 @@ async function getBalance(acct, id) {
   }
   const address = acct.address || acct;
   let balance;
+  console.log(`checking balance of ${address}`);
   try {
     balance = await contract.balanceOf(address);
-  } catch (_) {
+  } catch (e) {
+    console.log(`Err! ${e}`);
     try {
+      console.log(`Error! checking balance of ${address}, ${id}`);
       balance = await contract.balanceOf(address, id);
-    } catch (_) {}
+    } catch (e) {
+      console.log(`Err! ${e}`);
+    }
   }
   return balance || 0;
 }
