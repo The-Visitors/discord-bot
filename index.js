@@ -591,6 +591,9 @@ async function pollListings(skipFirstTime) {
             if (sale.seller.address.toLowerCase() === '0xbA7a5953A02dA87Fabd001a88794A5C33eaFBb14'.toLowerCase()) {
               continue;
             }
+            if (sale.seller.address.toLowerCase() === '0xF30feE0b988AA124F03cc25B8B0e88B2C8667c00'.toLowerCase()) {
+              continue;
+            }
             const embed = new MessageEmbed()
               .setColor('#0099ff')
               .setTitle(name + '  Listed!')
