@@ -594,6 +594,10 @@ async function pollListings(skipFirstTime) {
             if (sale.seller.address.toLowerCase() === '0xF30feE0b988AA124F03cc25B8B0e88B2C8667c00'.toLowerCase()) {
               continue;
             }
+            let symbol = sale.payment_token.symbol;
+            if (symbol === 'ETH') {
+              symbol = ethers.constants.EtherSymbol;
+            }
             const embed = new MessageEmbed()
               .setColor('#0099ff')
               .setTitle(name + '  Listed!')
@@ -605,7 +609,7 @@ async function pollListings(skipFirstTime) {
                   name: 'Price',
                   value: `${ethers.utils.formatEther(
                     sale.starting_price || '0'
-                  )}${ethers.constants.EtherSymbol}`,
+                  )}${symbol}`,
                   inline: true,
                 },
                 {
