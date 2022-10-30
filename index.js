@@ -594,7 +594,7 @@ async function pollListings(skipFirstTime) {
             if (sale.seller.address.toLowerCase() === '0xF30feE0b988AA124F03cc25B8B0e88B2C8667c00'.toLowerCase()) {
               continue;
             }
-            let symbol = sale.payment_token.symbol;
+            let symbol = (sale.payment_token && sale.payment_token.symbol) || 'ETH';
             if (symbol === 'ETH') {
               symbol = ethers.constants.EtherSymbol;
             }
