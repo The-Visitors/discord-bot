@@ -594,6 +594,9 @@ async function pollListings(skipFirstTime) {
             if (sale.seller.address.toLowerCase() === '0xF30feE0b988AA124F03cc25B8B0e88B2C8667c00'.toLowerCase()) {
               continue;
             }
+            if (sale.seller.address.toLowerCase() === '0x90aa587b339e81fa93af9920e78b72d398c8c655'.toLowerCase()) {
+              continue;
+            }
             let symbol = (sale.payment_token && sale.payment_token.symbol) || 'ETH';
             if (symbol === 'ETH') {
               symbol = ethers.constants.EtherSymbol;
