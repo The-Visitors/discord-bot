@@ -262,7 +262,7 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
     });
     fields.push({
       name: 'Gas Spent',
-      value: `${gasUsed} Ether`,
+      value: `${String(gasUsed.substring(0, 7))} Ether`,
       inline: true,
     });
   }
