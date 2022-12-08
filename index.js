@@ -584,12 +584,20 @@ async function pollListings(skipFirstTime) {
           if (!skipFirstTime) {
             const name = (sale && sale.asset && sale.asset.name) || '?';
             let image = sale.asset.image_url;
+
+            if (sale.seller.address.toLowerCase() === '0x750198134f72db6a068423a0e1fb20e5a9c8b26c'.toLowerCase()) {
+              continue;
+            }
+            if (sale.seller.address.toLowerCase() === '0x28fcc58649bb1b85e75eed9f710e11e8e861486c'.toLowerCase()) {
+              continue;
+            }
+            if (sale.seller.address.toLowerCase() === '0x556272591d28705AFA610fb6c82D299379fc162B'.toLowerCase()) {
+              continue;
+            }
+
             if (sale.seller.address.toLowerCase() === '0x9F515f3B8EFb88FBFB24D4bBe624abFF7ba7e7ce'.toLowerCase()) {
               continue;
               // image = 'https://0x420.mypinata.cloud/ipfs/QmVjXXaFxW87R6Fe5Pwdwrr5CkDTtkBvaj6FM5qmKcMyGG';
-            }
-            if (sale.seller.address.toLowerCase() === '0xbA7a5953A02dA87Fabd001a88794A5C33eaFBb14'.toLowerCase()) {
-              continue;
             }
             if (sale.seller.address.toLowerCase() === '0xF30feE0b988AA124F03cc25B8B0e88B2C8667c00'.toLowerCase()) {
               continue;
