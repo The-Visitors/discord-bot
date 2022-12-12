@@ -64,10 +64,11 @@ Heroku will require that you input the ENV vars that are necessary to run the sc
 
 The `scheduler` add-on is included in the `app.json` but **you still must schedule the script to run** and we recommend running it hourly. This way the script will run every hour and will check the OpenSea API for sales in the last hour.
 
-To set up the script to run on a schedule, once your Heroku app finishes deploying, click "Manage App", and then navigate to the Heroku Scheduler addon. Create a new job, run it every, and enter 
+To set up the script to run on a schedule, once your Heroku app finishes deploying, click "Manage App", and then navigate to the Heroku Scheduler addon. Create a new job, run it every, and enter
 
 ```bash
 yarn ts-node checkSales.ts
 ```
 
 as the Run Command.
+
