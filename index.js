@@ -594,7 +594,9 @@ async function pollListings(skipFirstTime) {
             if (sale.seller.address.toLowerCase() === '0x556272591d28705AFA610fb6c82D299379fc162B'.toLowerCase()) {
               continue;
             }
-
+            if (sale.seller.address.toLowerCase() === '0x7b1414a97471bcc28259827bc7db427d3a65cdff'.toLowerCase()) {
+              continue;
+            }
             if (sale.seller.address.toLowerCase() === '0x9F515f3B8EFb88FBFB24D4bBe624abFF7ba7e7ce'.toLowerCase()) {
               continue;
               // image = 'https://0x420.mypinata.cloud/ipfs/QmVjXXaFxW87R6Fe5Pwdwrr5CkDTtkBvaj6FM5qmKcMyGG';
