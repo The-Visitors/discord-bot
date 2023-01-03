@@ -607,6 +607,10 @@ async function pollListings(skipFirstTime) {
             if (sale.seller.address.toLowerCase() === '0x90aa587b339e81fa93af9920e78b72d398c8c655'.toLowerCase()) {
               continue;
             }
+            if (sale.seller.address.toLowerCase() === '0xbD40D4fF0b6B1fD591da0138d428B15b2ab343fD'.toLowerCase()) {
+              continue;
+            }
+
             let symbol = (sale.payment_token && sale.payment_token.symbol) || 'ETH';
             if (symbol === 'ETH') {
               symbol = ethers.constants.EtherSymbol;
