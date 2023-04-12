@@ -579,6 +579,9 @@ async function pollListings(skipFirstTime) {
           continue;
         }
         const completed = await redisClient.get(`listing:${sale.id}`);
+        if (completed) {
+          console.log(`Already have asset event ${sale.id}`);
+        }
         if (!completed) {
           await redisClient.set(`listing:${sale.id}`, true);
           if (!skipFirstTime) {
@@ -610,6 +613,11 @@ async function pollListings(skipFirstTime) {
             if (sale.seller.address.toLowerCase() === '0xbD40D4fF0b6B1fD591da0138d428B15b2ab343fD'.toLowerCase()) {
               continue;
             }
+            if (sale.seller.address.toLowerCase() === '0x2ff895e051f7A1c29c2D3bdAB35C4960E3E1ec72'.toLowerCase()) {
+              // gemma addition 4/12/23
+              continue;
+            }
+
 
             let symbol = (sale.payment_token && sale.payment_token.symbol) || 'ETH';
             if (symbol === 'ETH') {
