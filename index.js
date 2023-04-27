@@ -617,6 +617,11 @@ async function pollListings(skipFirstTime) {
               // gemma addition 4/12/23
               continue;
             }
+            if (sale.seller.address.toLowerCase() === '0xF179b80C4699C7e2B97daa8aB20a91c9e952a98C'.toLowerCase()) {
+              // gemma addition 4/27/23
+              continue;
+            }
+
 
 
             let symbol = (sale.payment_token && sale.payment_token.symbol) || 'ETH';
