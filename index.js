@@ -269,7 +269,7 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
   const embed = new MessageEmbed()
     .setColor('#0099ff')
     .setURL(
-      `https://opensea.io/assets/${process.env.CONTRACT_ADDRESS}/${tokenId}`
+      `https://opensea.io/assets/ethereum/${process.env.CONTRACT_ADDRESS}/${tokenId}`
     ) // todo this needs to handle /matic/
     .setTitle(token.name + ' minted!')
     .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
