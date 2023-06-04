@@ -119,12 +119,15 @@ async function getBalance(acct, id) {
   let balance;
   console.log(`checking balance of ${address}`);
   try {
-    balance = await contract["balanceOf(address)"](address);
+    balance = await contract['balanceOf(address)'](address);
   } catch (e) {
     console.log(`Err! ${e}`);
     try {
       console.log(`Error! checking balance of ${address}, ${id}`);
-      balance = await contract["balanceOf(address,uint256)"](address, parseInt(id, 10));
+      balance = await contract['balanceOf(address,uint256)'](
+        address,
+        parseInt(id, 10)
+      );
     } catch (e) {
       console.log(`Err! ${e}`);
     }
@@ -161,9 +164,7 @@ async function caged(from, value, count) {
     },
     {
       name: 'BurbCage Holds',
-      value: `${(
-        await getBalance(BURB_CAGE_ADDRESS)
-      ).toLocaleString()}`,
+      value: `${(await getBalance(BURB_CAGE_ADDRESS)).toLocaleString()}`,
       inline: true,
     },
     { name: '\u200B', value: '\u200B', inline: true },
@@ -267,7 +268,7 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
     });
   }
   const embed = new MessageEmbed()
-    .setColor('#0099ff')
+    .setColor(token.background_color || '#0099ff')
     .setURL(
       `https://opensea.io/assets/ethereum/${process.env.CONTRACT_ADDRESS}/${tokenId}`
     ) // todo this needs to handle /matic/
@@ -368,7 +369,9 @@ const buildMessage = async (sale, gasPrice, gasUsed) => {
     },
     {
       name: 'Buyer Holds',
-      value: `${(await getBalance(sale.winner_account, sale.asset.token_id)).toLocaleString()}`,
+      value: `${(
+        await getBalance(sale.winner_account, sale.asset.token_id)
+      ).toLocaleString()}`,
       inline: true,
     },
     { name: '\u200B', value: '\u200B', inline: true },
@@ -379,7 +382,9 @@ const buildMessage = async (sale, gasPrice, gasUsed) => {
     },
     {
       name: 'Seller Holds',
-      value: `${(await getBalance(sale.seller, sale.asset.token_id)).toLocaleString()}`,
+      value: `${(
+        await getBalance(sale.seller, sale.asset.token_id)
+      ).toLocaleString()}`,
       inline: true,
     },
   ];
@@ -588,43 +593,72 @@ async function pollListings(skipFirstTime) {
             const name = (sale && sale.asset && sale.asset.name) || '?';
             let image = sale.asset.image_url;
 
-            if (sale.seller.address.toLowerCase() === '0x750198134f72db6a068423a0e1fb20e5a9c8b26c'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0x750198134f72db6a068423a0e1fb20e5a9c8b26c'.toLowerCase()
+            ) {
               continue;
             }
-            if (sale.seller.address.toLowerCase() === '0x28fcc58649bb1b85e75eed9f710e11e8e861486c'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0x28fcc58649bb1b85e75eed9f710e11e8e861486c'.toLowerCase()
+            ) {
               continue;
             }
-            if (sale.seller.address.toLowerCase() === '0x556272591d28705AFA610fb6c82D299379fc162B'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0x556272591d28705AFA610fb6c82D299379fc162B'.toLowerCase()
+            ) {
               continue;
             }
-            if (sale.seller.address.toLowerCase() === '0x7b1414a97471bcc28259827bc7db427d3a65cdff'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0x7b1414a97471bcc28259827bc7db427d3a65cdff'.toLowerCase()
+            ) {
               continue;
             }
-            if (sale.seller.address.toLowerCase() === '0x9F515f3B8EFb88FBFB24D4bBe624abFF7ba7e7ce'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0x9F515f3B8EFb88FBFB24D4bBe624abFF7ba7e7ce'.toLowerCase()
+            ) {
               continue;
               // image = 'https://0x420.mypinata.cloud/ipfs/QmVjXXaFxW87R6Fe5Pwdwrr5CkDTtkBvaj6FM5qmKcMyGG';
             }
-            if (sale.seller.address.toLowerCase() === '0xF30feE0b988AA124F03cc25B8B0e88B2C8667c00'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0xF30feE0b988AA124F03cc25B8B0e88B2C8667c00'.toLowerCase()
+            ) {
               continue;
             }
-            if (sale.seller.address.toLowerCase() === '0x90aa587b339e81fa93af9920e78b72d398c8c655'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0x90aa587b339e81fa93af9920e78b72d398c8c655'.toLowerCase()
+            ) {
               continue;
             }
-            if (sale.seller.address.toLowerCase() === '0xbD40D4fF0b6B1fD591da0138d428B15b2ab343fD'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0xbD40D4fF0b6B1fD591da0138d428B15b2ab343fD'.toLowerCase()
+            ) {
               continue;
             }
-            if (sale.seller.address.toLowerCase() === '0x2ff895e051f7A1c29c2D3bdAB35C4960E3E1ec72'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0x2ff895e051f7A1c29c2D3bdAB35C4960E3E1ec72'.toLowerCase()
+            ) {
               // gemma addition 4/12/23
               continue;
             }
-            if (sale.seller.address.toLowerCase() === '0xF179b80C4699C7e2B97daa8aB20a91c9e952a98C'.toLowerCase()) {
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0xF179b80C4699C7e2B97daa8aB20a91c9e952a98C'.toLowerCase()
+            ) {
               // gemma addition 4/27/23
               continue;
             }
 
-
-
-            let symbol = (sale.payment_token && sale.payment_token.symbol) || 'ETH';
+            let symbol =
+              (sale.payment_token && sale.payment_token.symbol) || 'ETH';
             if (symbol === 'ETH') {
               symbol = ethers.constants.EtherSymbol;
             }
@@ -655,7 +689,9 @@ async function pollListings(skipFirstTime) {
                 },
                 {
                   name: 'Seller Holds',
-                  value: `${(await getBalance(sale.seller, sale.asset.token_id)).toLocaleString()}`,
+                  value: `${(
+                    await getBalance(sale.seller, sale.asset.token_id)
+                  ).toLocaleString()}`,
                   inline: true,
                 }
               )
