@@ -663,6 +663,13 @@ async function pollListings(skipFirstTime) {
               // KRILLER addition 6/15/23
               continue;
             }
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0x622a5b6c4e544a4c085745c4b147d995bb235bbe'.toLowerCase()
+            ) {
+              // KRILLER addition 6/15/23
+              continue;
+            }
 
             let symbol =
               (sale.payment_token && sale.payment_token.symbol) || 'ETH';
