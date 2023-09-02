@@ -670,7 +670,6 @@ async function pollListings(skipFirstTime) {
               // KRILLER addition 6/15/23
               continue;
             }
-            }
             if (
               sale.seller.address.toLowerCase() ===
               '0xF5e2C95ffa3845c6B8398404FFAdABD2D1b6Eff5'.toLowerCase()
