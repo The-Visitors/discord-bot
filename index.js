@@ -683,6 +683,13 @@ async function pollListings(skipFirstTime) {
             if (symbol === 'ETH') {
               symbol = ethers.constants.EtherSymbol;
             }
+
+            let royalty = sale.dev_seller_fee_basis_points / 100;
+            const royaltyField = {
+              name: 'Royalty to the Artist',
+              value: `${royalty}%`,
+              inline: true,
+            };
             const embed = new MessageEmbed()
               .setColor('#0099ff')
               .setTitle(name + '  Listed!')
@@ -697,12 +704,13 @@ async function pollListings(skipFirstTime) {
                   )}${symbol}`,
                   inline: true,
                 },
+                royaltyField,
                 {
                   name: 'Times Sold',
                   value: sale.asset.num_sales.toLocaleString(),
                   inline: true,
                 },
-                { name: '\u200B', value: '\u200B', inline: true },
+                // { name: '\u200B', value: '\u200B', inline: true },
                 {
                   name: 'Seller',
                   value: `${await getOpenSeaName(sale.seller.address)}`,
