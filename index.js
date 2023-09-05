@@ -677,6 +677,13 @@ async function pollListings(skipFirstTime) {
               // CYBER BANDIT addition 8/30/23
               continue;
             }
+            if (
+              sale.seller.address.toLowerCase() ===
+              '0x881ba48b3e959c30a714ebc307e20048aee2aa8f'.toLowerCase()
+            ) {
+              // CYBER BANDIT addition 9/5/23
+              continue;
+            }
 
             let symbol =
               (sale.payment_token && sale.payment_token.symbol) || 'ETH';
