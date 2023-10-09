@@ -62,7 +62,7 @@ let burbCageChannel;
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
   console.log('Ready!');
-  console.log(`Watching ${await contract.name()}`);
+  // console.log(`Watching ${await contract.name()}`);
   const channel = await client.channels.fetch(CHANNEL_ID);
   const mintChannel = MINT_CHANNEL_ID
     ? await client.channels.fetch(MINT_CHANNEL_ID)
@@ -474,11 +474,11 @@ async function searchForToken(
   }
 }
 
-function keepAlive() {
-  contract.name().then((r) => {
-    // console.log(`Keep Alive for ${r}`);
-  });
-}
+// function keepAlive() {
+//   contract.name().then((r) => {
+//     // console.log(`Keep Alive for ${r}`);
+//   });
+// }
 
 function listenForSales(channel, mintChannel, burnChannel) {
   if (BURB_CAGE_ADDRESS) {
@@ -759,7 +759,7 @@ async function pollListings(skipFirstTime) {
     }
   }
   setTimeout(pollListings, 10000);
-  setTimeout(keepAlive, 10000);
+  // setTimeout(keepAlive, 10000);
 }
 
 console.log('logging in discord client');
