@@ -2,7 +2,6 @@ const ethers = require('ethers');
 const axios = require('axios');
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const ABI = require('./abi');
-const CAGE_ABI = require('./burbcageabi');
 
 const Redis = require('ioredis');
 let redis_url = process.env.REDIS_TLS_URL;
@@ -20,7 +19,6 @@ const {
   DISCORD_TOKEN,
   CHANNEL_ID,
   MINT_CHANNEL_ID,
-  BURN_CHANNEL_ID,
   OPENSEA_KEY,
   COLLECTION_SLUG,
   ENS_PROVIDER_URL,
@@ -28,8 +26,6 @@ const {
   AUTHOR_THUMBNAIL,
   AUTHOR_URL,
   LISTING_CHANNEL_ID,
-  BURB_CAGE_ADDRESS,
-  BURB_CAGE_CHANNEL_ID,
 } = process.env;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -38,14 +34,7 @@ const fetchOptions = {
 };
 const ensprovider = new ethers.providers.JsonRpcProvider(ENS_PROVIDER_URL);
 const provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL);
-let cageContract;
-if (BURB_CAGE_ADDRESS) {
-  cageContract = new ethers.Contract(
-    process.env.BURB_CAGE_ADDRESS,
-    CAGE_ABI,
-    provider
-  );
-}
+
 const contract = new ethers.Contract(
   process.env.CONTRACT_ADDRESS,
   ABI,
@@ -57,23 +46,18 @@ provider.pollingInterval = 30000;
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 let redisClient;
 let listingChannel;
-let burbCageChannel;
 
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
   console.log('Ready!');
+  console.log(`Watching ${COLLECTION_SLUG}`);
   // console.log(`Watching ${await contract.name()}`);
   const channel = await client.channels.fetch(CHANNEL_ID);
   const mintChannel = MINT_CHANNEL_ID
     ? await client.channels.fetch(MINT_CHANNEL_ID)
     : channel;
-  const burnChannel = BURN_CHANNEL_ID
-    ? await client.channels.fetch(BURN_CHANNEL_ID)
-    : false;
-  listenForSales(channel, mintChannel, burnChannel);
-  if (BURB_CAGE_CHANNEL_ID) {
-    burbCageChannel = await client.channels.fetch(BURB_CAGE_CHANNEL_ID);
-  }
+
+  listenForSales(channel, mintChannel);
   if (LISTING_CHANNEL_ID) {
     listingChannel = await client.channels.fetch(LISTING_CHANNEL_ID);
     redisClient = new Redis(redis_url, redisOptions);
@@ -85,16 +69,21 @@ client.on('error', function (error) {
   console.error(`client's WebSocket encountered a connection error: ${error}`);
 });
 
+function osLink(chain, nft) {
+  return `https://opensea.io/assets/${chain}/${nft.contract}/${nft.identifier}`;
+}
 async function getOpenSeaName(address) {
   const response = await axios
-    .get(`https://api.opensea.io/api/v1/user/${address}`, fetchOptions)
+    .get(`https://api.opensea.io/api/v2/accounts/${address}`, fetchOptions)
     .catch(() => false);
   let username;
+
   if (
     !response ||
     !response.data ||
     response.data.username === 'null' ||
-    response.data.username === null
+    response.data.username === null ||
+    response.data.username.length === 0
   ) {
     username = await getENSName(address);
   } else {
@@ -111,11 +100,10 @@ async function getENSName(address) {
   return `[${name}](https://opensea.io/${address})`;
 }
 
-async function getBalance(acct, id) {
-  if (!acct) {
+async function getBalance(address, id) {
+  if (!address) {
     return '?';
   }
-  const address = acct.address || acct;
   let balance;
   console.log(`checking balance of ${address}`);
   try {
@@ -133,58 +121,6 @@ async function getBalance(acct, id) {
     }
   }
   return balance || 0;
-}
-
-async function caged(from, value, count) {
-  count = count || 0;
-  const tokenURI = await contract.tokenURI(value);
-  // todo: make this work for JSON tokenURI's
-  const response = await axios
-    .get(tokenURI.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/'))
-    .catch(() => false);
-  if (!response) {
-    console.log('Error fetching token metadata');
-    if (count < 3) {
-      setTimeout(() => {
-        caged(from, value, count + 1);
-      }, 1000);
-    }
-    return;
-  }
-  const token = response.data;
-  const image = token.image.replace(
-    'ipfs://',
-    'https://0x420.mypinata.cloud/ipfs/'
-  );
-  const fields = [
-    {
-      name: 'Cager',
-      value: `${await getENSName(from)}`,
-      inline: true,
-    },
-    {
-      name: 'BurbCage Holds',
-      value: `${(await getBalance(BURB_CAGE_ADDRESS)).toLocaleString()}`,
-      inline: true,
-    },
-    { name: '\u200B', value: '\u200B', inline: true },
-  ];
-  token.attributes.forEach((attr) => {
-    fields.push({
-      name: attr.trait_type,
-      value: attr.value,
-      inline: true,
-    });
-  });
-  const embed = new MessageEmbed()
-    .setColor('#0099ff')
-    .setTitle(token.name + ' Caged!')
-    .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
-    .setThumbnail(AUTHOR_THUMBNAIL)
-    .addFields(fields)
-    .setImage(image)
-    .setTimestamp();
-  burbCageChannel.send({ embeds: [embed] });
 }
 
 async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
@@ -255,18 +191,18 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
     });
   }
 
-  if (gasPrice && gasUsed) {
-    fields.push({
-      name: 'Gas Price',
-      value: `${gasPrice} Gwei`,
-      inline: true,
-    });
-    fields.push({
-      name: 'Gas Spent',
-      value: `${String(gasUsed.substring(0, 7))} Ether`,
-      inline: true,
-    });
-  }
+  // if (gasPrice && gasUsed) {
+  //   fields.push({
+  //     name: 'Gas Price',
+  //     value: `${gasPrice} Gwei`,
+  //     inline: true,
+  //   });
+  //   fields.push({
+  //     name: 'Gas Spent',
+  //     value: `${String(gasUsed.substring(0, 7))} Ether`,
+  //     inline: true,
+  //   });
+  // }
   const embed = new MessageEmbed()
     .setColor(token.background_color || '#0099ff')
     .setURL(
@@ -280,138 +216,66 @@ async function mint(toAddress, value, channel, count, gasPrice, gasUsed) {
     .setTimestamp();
   channel.send({ embeds: [embed] });
 }
-async function burn(fromAddress, value, channel, count, gasPrice, gasUsed) {
-  count = count || 0;
-  const tokenURI = `https://gemma.art/api/nft/${value}`;
-  const totalSupply = (await contract.totalSupply()).toNumber();
-  // todo: make this work for JSON tokenURI's
-  const response = await axios
-    .get(tokenURI.replace('ipfs://', 'https://0x420.mypinata.cloud/ipfs/'))
-    .catch(() => false);
-  if (!response) {
-    console.log('Error fetching token metadata');
-    if (count < 3) {
-      setTimeout(() => {
-        burn(fromAddress, value, channel, count + 1);
-      }, 1000);
-    }
-    return;
-  }
-  const token = response.data;
-  const image = token.image.replace(
-    'ipfs://',
-    'https://0x420.mypinata.cloud/ipfs/'
-  );
-  const fields = [
-    {
-      name: 'Burner',
-      value: `${await getOpenSeaName(fromAddress)}`,
-      inline: true,
-    },
-    {
-      name: 'Burner Holds',
-      value: `${(await getBalance(fromAddress, value)).toLocaleString()}`,
-      inline: true,
-    },
-    { name: 'Total Supply', value: totalSupply.toLocaleString(), inline: true },
-  ];
 
-  if (gasPrice && gasUsed) {
-    fields.push({
-      name: 'Gas Price',
-      value: `${gasPrice} Gwei`,
-      inline: true,
-    });
-    fields.push({
-      name: 'Gas Spent',
-      value: `${gasUsed} Ether`,
-      inline: true,
-    });
-  }
-  if (token.attributes) {
-    token.attributes.forEach((attr) => {
-      fields.push({
-        name: attr.trait_type,
-        value: attr.value,
-        inline: true,
-      });
-    });
-  }
-  const embed = new MessageEmbed()
-    .setColor('#FF0000')
-    .setTitle(token.name + ' burned!')
-    .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
-    .setThumbnail(AUTHOR_THUMBNAIL)
-    .addFields(fields)
-    .setImage(image)
-    .setTimestamp();
-  channel.send({ embeds: [embed] });
-}
 const buildMessage = async (sale, gasPrice, gasUsed) => {
   const fields = [
     {
-      name: 'Price',
-      value: `${ethers.utils.formatEther(sale.total_price || '0')}${
-        ethers.constants.EtherSymbol
-      }`,
-      inline: true,
-    },
-    {
-      name: 'Times Sold',
-      value: sale.asset.num_sales.toLocaleString(),
-      inline: true,
-    },
-    { name: '\u200B', value: '\u200B', inline: true },
-    {
       name: 'Buyer',
-      value: `${await getOpenSeaName(sale.winner_account.address)}`,
+      value: `${await getOpenSeaName(sale.buyer)}`,
       inline: true,
     },
     {
       name: 'Buyer Holds',
       value: `${(
-        await getBalance(sale.winner_account, sale.asset.token_id)
+        await getBalance(sale.buyer, sale.nft.identifier)
       ).toLocaleString()}`,
       inline: true,
     },
-    { name: '\u200B', value: '\u200B', inline: true },
+    {
+      name: 'Price',
+      value: `${ethers.utils.formatEther(BigInt(sale.payment.quantity || 0))}${
+        sale.payment.symbol
+      }`,
+      inline: true,
+    },
+    // { name: '\u200B', value: '\u200B', inline: true },
     {
       name: 'Seller',
-      value: `${await getOpenSeaName(sale.seller.address)}`,
+      value: `${await getOpenSeaName(sale.seller)}`,
       inline: true,
     },
     {
       name: 'Seller Holds',
       value: `${(
-        await getBalance(sale.seller, sale.asset.token_id)
+        await getBalance(sale.seller, sale.nft.identifier)
       ).toLocaleString()}`,
       inline: true,
     },
   ];
-  if (gasPrice && gasUsed) {
-    fields.push({
-      name: 'Gas Price',
-      value: `${gasPrice} Gwei`,
-      inline: true,
-    });
-    fields.push({
-      name: 'Gas Spent',
-      value: `${gasUsed} Ether`,
-      inline: true,
-    });
-  }
+  // if (gasPrice && gasUsed) {
+  //   fields.push({
+  //     name: 'Gas Price',
+  //     value: `${gasPrice} Gwei`,
+  //     inline: true,
+  //   });
+  //   fields.push({
+  //     name: 'Gas Spent',
+  //     value: `${gasUsed} Ether`,
+  //     inline: true,
+  //   });
+  // }
 
   return new MessageEmbed()
     .setColor('#0099ff')
-    .setTitle(sale.asset.name + ' sold!')
-    .setURL(sale.asset.permalink)
+    .setTitle(sale.nft.name + ' sold!')
+    .setURL(osLink(sale.chain, sale.nft))
     .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
-    .setThumbnail(sale.asset.collection.image_url)
+    .setThumbnail(sale.nft.imge_url)
     .addFields(fields)
-    .setImage(sale.asset.image_url)
-    .setTimestamp(Date.parse(`${sale.created_date}Z`))
+    .setImage(sale.nft.image_url)
+    .setTimestamp(new Date(sale.closing_date * 1000))
     .setFooter(
-      'Sold on OpenSea',
+      'Sold on OpenSea (v2)',
       'https://files.readme.io/566c72b-opensea-logomark-full-colored.png'
     );
 };
@@ -429,13 +293,16 @@ async function searchForToken(
   console.log(`Searching for token: ${token} attempt: ${count}`);
   let found = false;
   const params = new URLSearchParams({
-    collection_slug: COLLECTION_SLUG,
-    event_type: 'successful',
+    event_type: 'sale',
   });
   console.log('With params:', params);
 
   const openSeaResponseObject = await axios
-    .get('https://api.opensea.io/api/v1/events?' + params, fetchOptions)
+    .get(
+      `https://api.opensea.io/api/v2/events/collection/${COLLECTION_SLUG}?` +
+        params,
+      fetchOptions
+    )
     .catch((e) => {
       console.log('ERRRRR');
       console.log(e);
@@ -447,13 +314,13 @@ async function searchForToken(
     }
     if (openSeaResponse.asset_events) {
       openSeaResponse.asset_events.forEach((event) => {
-        if (event.asset) {
+        if (event.nft) {
           console.log(
-            `Comparing ${token} to ${event.asset.token_id}, to: ${to}, winner: ${event.winner_account.address}`
+            `Comparing ${token} to ${event.nft.identifier}, to: ${to}, winner: ${event.buyer}`
           );
           if (
-            event.asset.token_id === token &&
-            to.toLowerCase() === event.winner_account.address.toLowerCase()
+            event.nft.identifier === token &&
+            to.toLowerCase() === event.buyer.toLowerCase()
           ) {
             found = event;
           }
@@ -461,7 +328,7 @@ async function searchForToken(
           console.log('Strange event', event);
         }
       });
-      if (found && found.winner_account) {
+      if (found && found.buyer) {
         const embed = await buildMessage(found, gasPrice, gasUsed);
         channel.send({ embeds: [embed] });
       }
@@ -480,18 +347,8 @@ async function searchForToken(
 //   });
 // }
 
-function listenForSales(channel, mintChannel, burnChannel) {
-  if (BURB_CAGE_ADDRESS) {
-    cageContract.on('BurbCaged', async (fromAddress, tokenId) => {
-      console.log(`Burb Caged! ${tokenId} caged by ${fromAddress}`);
-      caged(fromAddress, tokenId);
-    });
-  }
-
+function listenForSales(channel, mintChannel) {
   contract.on('Transfer', async (fromAddress, toAddress, value, event) => {
-    if (toAddress.toLowerCase() === (BURB_CAGE_ADDRESS || '').toLowerCase()) {
-      return;
-    }
     const receipt = await event.getTransactionReceipt();
     const gasPrice = ethers.utils.formatUnits(
       receipt.effectiveGasPrice,
@@ -508,9 +365,7 @@ function listenForSales(channel, mintChannel, burnChannel) {
     if (fromAddress === ZERO_ADDRESS) {
       mint(toAddress, value, mintChannel, 0, gasPrice, gasUsed);
     } else if (toAddress === ZERO_ADDRESS) {
-      if (burnChannel) {
-        burn(fromAddress, value, burnChannel, 0, gasPrice, gasUsed);
-      }
+      // do nothing… burn
     } else {
       setTimeout(() => {
         searchForToken(
@@ -555,11 +410,14 @@ function listenForSales(channel, mintChannel, burnChannel) {
 
 async function pollListings(skipFirstTime) {
   const params = new URLSearchParams({
-    collection_slug: COLLECTION_SLUG,
-    event_type: 'created',
+    event_type: 'order',
   });
   const openSeaResponseObject = await axios
-    .get('https://api.opensea.io/api/v1/events?' + params, fetchOptions)
+    .get(
+      `https://api.opensea.io/api/v2/events/collection/${COLLECTION_SLUG}?` +
+        params,
+      fetchOptions
+    )
     .catch((e) => {
       console.log('ERROR Fetching Listing Events');
       console.log(e);
@@ -572,183 +430,169 @@ async function pollListings(skipFirstTime) {
     }
     if (openSeaResponse.asset_events) {
       for (let i = 0; i < openSeaResponse.asset_events.length; i += 1) {
-        const sale = openSeaResponse.asset_events[i];
-        if (
-          !sale.id ||
-          !sale.asset ||
-          !sale.asset.name ||
-          !sale.asset.permalink
-        ) {
-          console.log('weird asset for listing ' + sale.id);
-          console.log(sale.asset);
+        const event = openSeaResponse.asset_events[i];
+        if (event.order_type !== 'listing') {
           continue;
         }
-        const completed = await redisClient.get(`listing:${sale.id}`);
+        const REF = `listing/${event.order_hash}`;
+        const completed = await redisClient.get(REF);
         if (completed) {
-          console.log(`Already have asset event ${sale.id}`);
+          continue;
         }
         if (!completed) {
-          await redisClient.set(`listing:${sale.id}`, true);
+          await redisClient.set(REF, true);
           if (!skipFirstTime) {
-            const name = (sale && sale.asset && sale.asset.name) || '?';
-            let image = sale.asset.image_url;
+            const name = (event && event.asset && event.asset.name) || '?';
+            let image = event.asset.image_url;
 
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x750198134f72db6a068423a0e1fb20e5a9c8b26c'.toLowerCase()
             ) {
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x28fcc58649bb1b85e75eed9f710e11e8e861486c'.toLowerCase()
             ) {
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x556272591d28705AFA610fb6c82D299379fc162B'.toLowerCase()
             ) {
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x7b1414a97471bcc28259827bc7db427d3a65cdff'.toLowerCase()
             ) {
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x9F515f3B8EFb88FBFB24D4bBe624abFF7ba7e7ce'.toLowerCase()
             ) {
               continue;
               // image = 'https://0x420.mypinata.cloud/ipfs/QmVjXXaFxW87R6Fe5Pwdwrr5CkDTtkBvaj6FM5qmKcMyGG';
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0xF30feE0b988AA124F03cc25B8B0e88B2C8667c00'.toLowerCase()
             ) {
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x90aa587b339e81fa93af9920e78b72d398c8c655'.toLowerCase()
             ) {
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0xbD40D4fF0b6B1fD591da0138d428B15b2ab343fD'.toLowerCase()
             ) {
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x2ff895e051f7A1c29c2D3bdAB35C4960E3E1ec72'.toLowerCase()
             ) {
               // gemma addition 4/12/23
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0xF179b80C4699C7e2B97daa8aB20a91c9e952a98C'.toLowerCase()
             ) {
               // gemma addition 4/27/23
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0xeec9a835df1298587348b5c01048aac2277f340a'.toLowerCase()
             ) {
               // KRILLER addition 6/15/23
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x622a5b6c4e544a4c085745c4b147d995bb235bbe'.toLowerCase()
             ) {
               // KRILLER addition 6/15/23
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0xF5e2C95ffa3845c6B8398404FFAdABD2D1b6Eff5'.toLowerCase()
             ) {
               // CYBER BANDIT addition 8/30/23
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x881ba48b3e959c30a714ebc307e20048aee2aa8f'.toLowerCase()
             ) {
               // CYBER BANDIT addition 9/5/23
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0xbea8017ccf98017c698a10065d01fdc480930366'.toLowerCase()
             ) {
               // GEMMA addition 9/11/23
               continue;
             }
             if (
-              sale.seller.address.toLowerCase() ===
+              event.maker.toLowerCase() ===
               '0x8328af4c65ace04382f83ab0063884f0ee694d0b'.toLowerCase()
             ) {
               // GEMMA addition 9/25/23
               continue;
             }
 
-            let symbol =
-              (sale.payment_token && sale.payment_token.symbol) || 'ETH';
+            let symbol = event.payment.symbol;
             if (symbol === 'ETH') {
               symbol = ethers.constants.EtherSymbol;
             }
 
-            let royalty = sale.dev_seller_fee_basis_points / 100;
-            const royaltyField = {
-              name: 'Royalty to the Artist',
-              value: `${royalty}%`,
-              inline: true,
-            };
+            // let royalty = sale.dev_seller_fee_basis_points / 100;
+            // const royaltyField = {
+            //   name: 'Royalty to the Artist',
+            //   value: `${royalty}%`,
+            //   inline: true,
+            // };
             const embed = new MessageEmbed()
               .setColor('#0099ff')
               .setTitle(name + '  Listed!')
-              .setURL(sale.asset.permalink)
+              .setURL(osLink(event.chain, event.asset))
               .setAuthor(AUTHOR_NAME, AUTHOR_THUMBNAIL, AUTHOR_URL)
-              .setThumbnail(sale.asset.collection.image_url)
+              .setThumbnail(event.asset.image_url)
               .addFields(
                 {
                   name: 'Price',
-                  value: `${ethers.utils.formatEther(
-                    sale.starting_price || '0'
-                  )}${symbol}`,
+                  value: `${ethers.utils.formatEther(BigInt(
+                    event.payment.quantity || 0
+                  ))}${symbol}`,
                   inline: true,
                 },
-                royaltyField,
-                {
-                  name: 'Times Sold',
-                  value: sale.asset.num_sales.toLocaleString(),
-                  inline: true,
-                },
-                // { name: '\u200B', value: '\u200B', inline: true },
                 {
                   name: 'Seller',
-                  value: `${await getOpenSeaName(sale.seller.address)}`,
+                  value: `${await getOpenSeaName(event.maker)}`,
                   inline: true,
                 },
                 {
                   name: 'Seller Holds',
                   value: `${(
-                    await getBalance(sale.seller, sale.asset.token_id)
+                    await getBalance(event.maker, event.asset.identifier)
                   ).toLocaleString()}`,
                   inline: true,
                 }
               )
               .setImage(image)
-              .setTimestamp(Date.parse(`${sale.created_date}Z`))
+              .setTimestamp(new Date(event.start_date * 1000))
               .setFooter(
-                'Listed on OpenSea',
+                'Listed on OpenSea (v2)',
                 'https://files.readme.io/566c72b-opensea-logomark-full-colored.png'
               );
 
@@ -764,3 +608,5 @@ async function pollListings(skipFirstTime) {
 
 console.log('logging in discord client');
 client.login(DISCORD_TOKEN);
+
+
