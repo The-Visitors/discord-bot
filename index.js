@@ -543,6 +543,7 @@ async function pollListings(skipFirstTime) {
               // GEMMA addition 9/11/23
               continue;
             }
+
             if (
               event.maker.toLowerCase() ===
               '0x8328af4c65ace04382f83ab0063884f0ee694d0b'.toLowerCase()
@@ -550,6 +551,14 @@ async function pollListings(skipFirstTime) {
               // GEMMA addition 9/25/23
               continue;
             }
+            if (
+              event.maker.toLowerCase() ===
+              '0x476151646c8674cdd9f956d78f7233939864b799;'.toLowerCase()
+            ) {
+              // Vizzie addition 1/15/24
+              continue;
+            }
+
 
             let symbol = event.payment.symbol;
             if (symbol === 'ETH') {
