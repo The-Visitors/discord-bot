@@ -553,7 +553,7 @@ async function pollListings(skipFirstTime) {
             }
             if (
               event.maker.toLowerCase() ===
-              '0x476151646c8674cdd9f956d78f7233939864b799;'.toLowerCase()
+              '0x476151646c8674cdd9f956d78f7233939864b799'.toLowerCase()
             ) {
               // Vizzie addition 1/15/24
               continue;
