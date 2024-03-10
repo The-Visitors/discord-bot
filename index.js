@@ -558,7 +558,20 @@ async function pollListings(skipFirstTime) {
               // Vizzie addition 1/15/24
               continue;
             }
-
+            if (
+              event.maker.toLowerCase() ===
+              '0x9667857f0461354a7e2caeb6c86a560eeca1d2da'.toLowerCase()
+            ) {
+              // GEMMA addition 3/9/24
+              continue;
+            }
+            if (
+              event.maker.toLowerCase() ===
+              '0xb1a5a0c38d95dee2e5f6a8be5e1247394434ce7a'.toLowerCase()
+            ) {
+              // GEMMA addition 3/9/24
+              continue;
+            }
 
             let symbol = event.payment.symbol;
             if (symbol === 'ETH') {
