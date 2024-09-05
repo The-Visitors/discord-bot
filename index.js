@@ -31,11 +31,11 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const fetchOptions = {
   headers: { 'x-api-key': OPENSEA_KEY },
 };
-const ensprovider = new ethers.InfuraProvider(
+const ensprovider = new ethers.providers.InfuraProvider(
   process.env.ENS_NETWORK,
   process.env.INFURA_API_KEY
 );
-const provider = new ethers.InfuraProvider(
+const provider = new ethers.providers.InfuraProvider(
   process.env.CONTRACT_NETWORK,
   process.env.INFURA_API_KEY
 );
