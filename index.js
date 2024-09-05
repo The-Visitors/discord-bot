@@ -32,8 +32,14 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const fetchOptions = {
   headers: { 'x-api-key': OPENSEA_KEY },
 };
-const ensprovider = new ethers.providers.JsonRpcProvider(ENS_PROVIDER_URL);
-const provider = new ethers.providers.JsonRpcProvider(process.env.PROVIDER_URL);
+const ensprovider = new ethers.InfuraProvider(
+  process.env.ENS_NETWORK,
+  process.env.INFURA_API_KEY
+);
+const provider = new ethers.InfuraProvider(
+  process.env.CONTRACT_NETWORK,
+  process.env.INFURA_API_KEY
+);
 
 const contract = new ethers.Contract(
   process.env.CONTRACT_ADDRESS,
